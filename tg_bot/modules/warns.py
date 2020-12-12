@@ -503,8 +503,8 @@ __help__ = """
 *Admin only:*
  - /warn <userhandle/reply>: warn a user. After 3 warns, the user will be banned from the group.
  - /swarn or /silwarn <userhandle/reply>: warns a user silently by deleted your message after warn.
- - /dwarn or /delwarn <userhandle/reply>: warns a user silently by deleted your message after warn.
- - /kwarn or /warnkick <userhandle/reply>: warns a user silently by deleted your message after warn.
+ - /dwarn or /delwarn <userhandle/reply>: warns a user and also deletes their message.
+ - /kwarn or /warnkick <userhandle/reply>: warns a user and kicks them out of the group(only kick not ban).
  - /unwarn or /rmwarn <userhandle>: remove the last warning of the user. Can also be used as a reply.
  - /resetwarn <userhandle>: reset the warnings for a user. Can also be used as a reply.
  - /addwarn <keyword> <reply message>: set a warning filter on a certain keyword. If you want your keyword to \
