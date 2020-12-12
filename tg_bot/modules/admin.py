@@ -62,12 +62,10 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
                           can_promote_members=bot_member.can_promote_members)
 
     message.reply_text("Successfully promoted!")
-    return "<b>{}:</b>" \
-           "\n#PROMOTED" \
-           "\n<b>Admin:</b> {}" \
-           "\n<b>User:</b> {}".format(html.escape(chat.title),
-                                      mention_html(user.id, user.first_name),
-                                      mention_html(user_member.user.id, user_member.user.first_name))
+    return f"<b>{html.escape(chat.title)}:</b>" \
+           f"\n#PROMOTED" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+           f"\n<b>User:</b> {mention_html(user_member.user.id, user_member.user.first_name)}"
 
 
 @run_async
@@ -91,7 +89,6 @@ def set_title(bot: Bot, update: Update, args):
     if not title:
         message.reply_text("There's no title...")
         return
-
     response = requests.post(
         f"https://api.telegram.org/bot{TOKEN}/setChatAdministratorCustomTitle"
         f"?chat_id={chat.id}"
@@ -132,7 +129,7 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
         return ""
 
     if user_id == bot.id:
-        message.reply_text("I can't demote myself! Get an admin to do it for me.")
+        message.reply_text("I can't demote myself! It makes me sad that you even tried that!")
         return ""
 
     try:
@@ -145,17 +142,14 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
                               can_restrict_members=False,
                               can_pin_messages=False,
                               can_promote_members=False)
-        message.reply_text("Successfully demoted!")
-        return "<b>{}:</b>" \
-               "\n#DEMOTED" \
-               "\n<b>Admin:</b> {}" \
-               "\n<b>User:</b> {}".format(html.escape(chat.title),
-                                          mention_html(user.id, user.first_name),
-                                          mention_html(user_member.user.id, user_member.user.first_name))
+        message.reply_text(f"Successfully demoted f{user_member.user.first_name}!")
+        return f"<b>{html.escape(chat.title)}:</b>" \
+               f"\n#DEMOTED" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+               f"\n<b>User:</b> {mention_html(user_member.user.id, user_member.user.first_name)}"
 
     except BadRequest:
-        message.reply_text("Could not demote. I might not be admin, or the admin status was appointed by another "
-                           "user, so I can't act upon them!")
+        message.reply_text("I couldn't demote. Either I am not an admin, or the user's admin status was appointed by another admin, so I can't act upon them!")
         return ""
 
 
@@ -184,9 +178,9 @@ def pin(bot: Bot, update: Update, args: List[str]) -> str:
                 pass
             else:
                 raise
-        return "<b>{}:</b>" \
-               "\n#PINNED" \
-               "\n<b>Admin:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name))
+        return f"<b>{html.escape(chat.title)}:</b>" \
+               f"\n#PINNED" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}"
 
     return ""
 
@@ -208,10 +202,9 @@ def unpin(bot: Bot, update: Update) -> str:
         else:
             raise
 
-    return "<b>{}:</b>" \
-           "\n#UNPINNED" \
-           "\n<b>Admin:</b> {}".format(html.escape(chat.title),
-                                       mention_html(user.id, user.first_name))
+    return f"<b>{html.escape(chat.title)}:</b>" \
+           f"\n#UNPINNED" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}"
 
 
 @run_async
@@ -236,19 +229,21 @@ def invite(bot: Bot, update: Update):
 
 @run_async
 def adminlist(bot: Bot, update: Update):
-    administrators = update.effective_chat.get_administrators()
-    text = "Admins in <b>{}</b>:".format(update.effective_chat.title or "this chat")
+    chat = update.effective_chat  # type: Optional[Chat]
+    administrators = chat.get_administrators()
+    chat_title = chat.title or "this chat"
+    text = f"Admins in <b>{chat_title}</b>:"
     for admin in administrators:
         user = admin.user
-        name = """<a href="tg://user?id={}">{}</a>""".format(user.id, user.first_name + (user.last_name or ""))
-        text += "\n • {}".format(name)
+        name = mention_html(user.id,user.first_name + (user.last_name or ""))
+        text += f"\n • {name}"
 
     update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
 def __chat_settings__(chat_id, user_id):
-    return "You are *admin*: `{}`".format(
-        dispatcher.bot.get_chat_member(chat_id, user_id).status in ("administrator", "creator"))
+    status = dispatcher.bot.get_chat_member(chat_id, user_id).status in ("administrator", "creator")
+    return f"You are *admin*: `{status}`"
 
 
 __help__ = """

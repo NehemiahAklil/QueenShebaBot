@@ -113,8 +113,7 @@ def new_member(bot: Bot, update: Update, job_queue: JobQueue):
                 
              # Make bot greet admins
             elif new_mem.id == bot.id:
-                update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding me to {}" 
-                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, bot.first_name, chat_name))
+                update.effective_message.reply_text(f"Hey {user.first_name}, I'm {bot.first_name}! Thank you for adding me to {chat_name} and be sure to check /help in PM for more commands and tricks!")
 
             else:
                 # If welcome message is media, send with appropriate function
@@ -129,7 +128,7 @@ def new_member(bot: Bot, update: Update, job_queue: JobQueue):
 
                 if cust_welcome:
                     if new_mem.last_name:
-                        fullname = "{} {}".format(first_name, new_mem.last_name)
+                        fullname = f"{first_name} {new_mem.last_name}"
                     else:
                         fullname = first_name
                     count = chat.get_members_count()
@@ -168,11 +167,11 @@ def new_member(bot: Bot, update: Update, job_queue: JobQueue):
                                              until_date=(int(time.time() + 24 * 60 * 60)))
                 #Join welcome: strong mute
                 if welc_mutes == "strong":
-                    new_join_mem = "[{}](tg://user?id={})".format(new_mem.first_name, user_id)
-                    wm_msg = msg.reply_text("{}, click the button below to prove you're human. " \
-                            "You've got 2 minutes.".format(new_join_mem),
+                    new_join_mem = f"[{new_mem.first_name}](tg://user?id={user_id})"
+                    wm_msg = msg.reply_text(f"{new_join_mem}, click the button below to prove you're human. " \
+                            "You've got 2 minutes.",
                          reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Yes, I'm human.", 
-                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
+                         callback_data=f"user_join_({new_mem.id})")]]), parse_mode=ParseMode.MARKDOWN)
                     try:
                         bot.restrict_chat_member(chat.id, new_mem.id, 
                                                  can_send_messages=False, 
@@ -229,7 +228,7 @@ def left_member(bot: Bot, update: Update):
             first_name = left_mem.first_name or "PersonWithNoName"  # edge case of empty name - occurs for some bugs.
             if cust_goodbye:
                 if left_mem.last_name:
-                    fullname = "{} {}".format(first_name, left_mem.last_name)
+                    fullname = f"{first_name} {left_mem.last_name}"
                 else:
                     fullname = first_name
                 count = chat.get_members_count()
@@ -265,9 +264,8 @@ def welcome(bot: Bot, update: Update, args: List[str]):
         noformat = args and args[0].lower() == "noformat"
         pref, welcome_m, welcome_type = sql.get_welc_pref(chat.id)
         update.effective_message.reply_text(
-            "This chat has it's welcome setting set to: `{}`.\n*The welcome message "
-            "(not filling the {{}}) is:*".format(pref),
-            parse_mode=ParseMode.MARKDOWN)
+            f"This chat has it's welcome setting set to: `{pref}`.\n*The welcome message "
+            "(not filling the {{}}) is:*", parse_mode=ParseMode.MARKDOWN)
 
         if welcome_type == sql.Types.BUTTON_TEXT:
             buttons = sql.get_welc_buttons(chat.id)
@@ -311,9 +309,8 @@ def goodbye(bot: Bot, update: Update, args: List[str]):
         noformat = args and args[0] == "noformat"
         pref, goodbye_m, goodbye_type = sql.get_gdbye_pref(chat.id)
         update.effective_message.reply_text(
-            "This chat has it's goodbye setting set to: `{}`.\n*The goodbye  message "
-            "(not filling the {{}}) is:*".format(pref),
-            parse_mode=ParseMode.HTML)
+            f"This chat has it's goodbye setting set to: `{pref}`.\n*The goodbye  message "
+            "(not filling the {{}}) is:*",parse_mode=ParseMode.HTML)
 
         if goodbye_type == sql.Types.BUTTON_TEXT:
             buttons = sql.get_gdbye_buttons(chat.id)
@@ -365,11 +362,10 @@ def set_welcome(bot: Bot, update: Update) -> str:
     sql.set_custom_welcome(chat.id, content or text, data_type, buttons)
     msg.reply_text("Successfully set custom welcome message!")
 
-    return "<b>{}:</b>" \
-           "\n#SET_WELCOME" \
-           "\n<b>Admin:</b> {}" \
-           "\nSet the welcome message.".format(escape(chat.title),
-                                               mention_html(user.id, user.first_name))
+    return f"<b>{escape(chat.title)}:</b>" \
+           f"\n#SET_WELCOME" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+           f"\nSet the welcome message."
 
 
 @run_async
@@ -380,11 +376,10 @@ def reset_welcome(bot: Bot, update: Update) -> str:
     user = update.effective_user  # type: Optional[User]
     sql.set_custom_welcome(chat.id, sql.DEFAULT_WELCOME, sql.Types.TEXT)
     update.effective_message.reply_text("Successfully reset welcome message to default!")
-    return "<b>{}:</b>" \
-           "\n#RESET_WELCOME" \
-           "\n<b>Admin:</b> {}" \
-           "\nReset the welcome message to default.".format(escape(chat.title),
-                                                            mention_html(user.id, user.first_name))
+    return f"<b>{escape(chat.title)}:</b>" \
+           f"\n#RESET_WELCOME" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+           f"\nReset the welcome message to default."
 
 
 @run_async
@@ -402,11 +397,10 @@ def set_goodbye(bot: Bot, update: Update) -> str:
 
     sql.set_custom_gdbye(chat.id, content or text, data_type, buttons)
     msg.reply_text("Successfully set custom goodbye message!")
-    return "<b>{}:</b>" \
-           "\n#SET_GOODBYE" \
-           "\n<b>Admin:</b> {}" \
-           "\nSet the goodbye message.".format(escape(chat.title),
-                                               mention_html(user.id, user.first_name))
+    return f"<b>{escape(chat.title)}:</b>" \
+           f"\n#SET_GOODBYE" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+           f"\nSet the goodbye message."
 
 
 @run_async
@@ -417,11 +411,10 @@ def reset_goodbye(bot: Bot, update: Update) -> str:
     user = update.effective_user  # type: Optional[User]
     sql.set_custom_gdbye(chat.id, sql.DEFAULT_GOODBYE, sql.Types.TEXT)
     update.effective_message.reply_text("Successfully reset goodbye message to default!")
-    return "<b>{}:</b>" \
-           "\n#RESET_GOODBYE" \
-           "\n<b>Admin:</b> {}" \
-           "\nReset the goodbye message.".format(escape(chat.title),
-                                                 mention_html(user.id, user.first_name))
+    return f"<b>{escape(chat.title)}:</b>" \
+           f"\n#RESET_GOODBYE" \
+           f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+           f"\nReset the goodbye message."
 
 
 @run_async
@@ -436,34 +429,32 @@ def welcomemute(bot: Bot, update: Update, args: List[str]) -> str:
         if  args[0].lower() in ("off", "no"):
             sql.set_welcome_mutes(chat.id, False)
             msg.reply_text("I will no longer mute people on joining!")
-            return "<b>{}:</b>" \
-                   "\n#WELCOME_MUTE" \
-                   "\n<b>• Admin:</b> {}" \
-                   "\nHas toggled welcome mute to <b>OFF</b>.".format(escape(chat.title),
-                                                                      mention_html(user.id, user.first_name))
+            return f"<b>{escape(chat.title)}:</b>" \
+                   f"\n#WELCOME_MUTE" \
+                   f"\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}" \
+                   f"\nHas toggled welcome mute to <b>OFF</b>."
         elif args[0].lower() in ("soft"):
              sql.set_welcome_mutes(chat.id, "soft")
              msg.reply_text("I will restrict users' permission to send media for 24 hours.")
-             return "<b>{}:</b>" \
-                    "\n#WELCOME_MUTE" \
-                    "\n<b>• Admin:</b> {}" \
-                    "\nHas toggled welcome mute to <b>SOFT</b>.".format(escape(chat.title),
-                                                                       mention_html(user.id, user.first_name))
+             return f"<b>{escape(chat.title)}:</b>" \
+                    f"\n#WELCOME_MUTE" \
+                    f"\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}" \
+                    f"\nHas toggled welcome mute to <b>SOFT</b>."
         elif args[0].lower() in ("strong"):
              sql.set_welcome_mutes(chat.id, "strong")
              msg.reply_text("I will now mute people when they join until they prove they're not a bot.")
-             return "<b>{}:</b>" \
-                    "\n#WELCOME_MUTE" \
-                    "\n<b>• Admin:</b> {}" \
-                    "\nHas toggled welcome mute to <b>STRONG</b>.".format(escape(chat.title),
-                                                                          mention_html(user.id, user.first_name))
+             return f"<b>{escape(chat.title)}:</b>" \
+                    f"\n#WELCOME_MUTE" \
+                    f"\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}" \
+                    f"\nHas toggled welcome mute to <b>STRONG</b>."
         else:
             msg.reply_text("Please enter `off`/`no`/`soft`/`strong`!", parse_mode=ParseMode.MARKDOWN)
             return ""
     else:
         curr_setting = sql.welcome_mutes(chat.id)
-        reply = "\n Give me a setting! Choose one out of: `off`/`no` or `soft` or `strong` only! \nCurrent setting: `{}`"
-        msg.reply_text(reply.format(curr_setting), parse_mode=ParseMode.MARKDOWN)
+        reply = f"\n Give me a setting! Choose one out of: `off`/`no` or `soft` or `strong` only!"\
+                f"\nCurrent setting: `{curr_setting}`"
+        msg.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
         return ""
 
 
@@ -485,19 +476,17 @@ def clean_welcome(bot: Bot, update: Update, args: List[str]) -> str:
     if args[0].lower() in ("on", "yes"):
         sql.set_clean_welcome(str(chat.id), True)
         update.effective_message.reply_text("I'll try to delete old welcome messages!")
-        return "<b>{}:</b>" \
-               "\n#CLEAN_WELCOME" \
-               "\n<b>Admin:</b> {}" \
-               "\nHas toggled clean welcomes to <code>ON</code>.".format(escape(chat.title),
-                                                                         mention_html(user.id, user.first_name))
+        return f"<b>{escape(chat.title)}:</b>" \
+               f"\n#CLEAN_WELCOME" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+               f"\nHas toggled clean welcomes to <code>ON</code>."
     elif args[0].lower() in ("off", "no"):
         sql.set_clean_welcome(str(chat.id), False)
         update.effective_message.reply_text("I won't delete old welcome messages.")
-        return "<b>{}:</b>" \
-               "\n#CLEAN_WELCOME" \
-               "\n<b>Admin:</b> {}" \
-               "\nHas toggled clean welcomes to <code>OFF</code>.".format(escape(chat.title),
-                                                                          mention_html(user.id, user.first_name))
+        return f"<b>{escape(chat.title)}:</b>" \
+               f"\n#CLEAN_WELCOME" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+               f"\nHas toggled clean welcomes to <code>OFF</code>."
     else:
         # idek what you're writing, say yes or no
         update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
@@ -546,35 +535,32 @@ def check_welcomemute_list(chat_id, user, message_id, wmsg_id, bot, job):
             bot.delete_message(chat_id, wmsg_id)
 
 
-WELC_HELP_TXT = "Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages" \
-                " to be individually generated, like the default welcome message is, you can use *these* variables:\n" \
-                " - `{{first}}`: this represents the user's *first* name\n" \
-                " - `{{last}}`: this represents the user's *last* name. Defaults to *first name* if user has no " \
-                "last name.\n" \
-                " - `{{fullname}}`: this represents the user's *full* name. Defaults to *first name* if user has no " \
-                "last name.\n" \
-                " - `{{username}}`: this represents the user's *username*. Defaults to a *mention* of the user's " \
-                "first name if has no username.\n" \
-                " - `{{mention}}`: this simply *mentions* a user - tagging them with their first name.\n" \
-                " - `{{id}}`: this represents the user's *id*\n" \
-                " - `{{count}}`: this represents the user's *member number*.\n" \
-                " - `{{chatname}}`: this represents the *current chat name*.\n" \
-                "\nEach variable MUST be surrounded by `{{}}` to be replaced.\n" \
-                "Welcome messages also support markdown, so you can make any elements bold/italic/code/links. " \
-                "Buttons are also supported, so you can make your welcomes look awesome with some nice intro " \
-                "buttons.\n" \
-                "To create a button linking to your rules, use this: `[Rules](buttonurl://t.me/{}?start=group_id)`. " \
-                "Simply replace `group_id` with your group's id, which can be obtained via /id, and you're good to " \
-                "go. Note that group ids are usually preceded by a `-` sign; this is required, so please don't " \
-                "remove it.\n" \
-                "If you're feeling fun, you can even set images/gifs/videos/voice messages as the welcome message by " \
-                "replying to the desired media, and calling /setwelcome.".format(dispatcher.bot.username)
+WELC_HELP_TXT = f"""
+Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages to be individually generated, like the default welcome message is, you can use *these* variables:
+                " - `{{first}}`: this represents the user's *first* name
+                " - `{{last}}`: this represents the user's *last* name. Defaults to *first name* if user has no last name.\n
+                " - `{{fullname}}`: this represents the user's *full* name. Defaults to *first name* if user has no last name.
+                " - `{{username}}`: this represents the user's *username*. Defaults to a *mention* of the user's first name if has no username.
+                " - `{{mention}}`: this simply *mentions* a user - tagging them with their first name.
+                " - `{{id}}`: this represents the user's *id*
+                " - `{{count}}`: this represents the user's *member number*.
+                " - `{{chatname}}`: this represents the *current chat name*.
+                "\nEach variable MUST be surrounded by `{{}}` to be replaced.
+                Welcome messages also support markdown, so you can make any elements bold/italic/code/links. 
+                Buttons are also supported, so you can make your welcomes look awesome with some nice intro buttons.
+                To create a button linking to your rules, use this: `[Rules](buttonurl://t.me/{dispatcher.bot.username}?start=group_id)`. 
+                Simply replace `group_id` with your group's id, which can be obtained via /id, and you're good to 
+                go. Note that group ids are usually preceded by a `-` sign; this is required, so please don't remove it.
+                If you're feeling fun, you can even set images/gifs/videos/voice messages as the welcome message by 
+                replying to the desired media, and calling /setwelcome.
+                """
 
-WELC_MUTE_HELP_TXT = "You can get the bot to mute new people who join your group and hence prevent spambots from flooding your group. " \
-                     "The following options are possible:\n" \
-                     "- `/welcomemute soft`: restricts new members from sending media for 24 hours.\n" \
-                     "- `/welcomemute strong`: mutes new members till they tap on a button thereby verifying they're human.\n" \
-                     "- `/welcomemute off`: turns off welcomemute."
+WELC_MUTE_HELP_TXT = """
+You can get the bot to mute new people who join your group and hence prevent spambots from flooding your group.                      The following options are possible:
+    - `/welcomemute soft`: restricts new members from sending media for 24 hours.
+    - `/welcomemute strong`: mutes new members till they tap on a button thereby verifying they're human.
+    - `/welcomemute off`: turns off welcomemute.
+"""
 
 
 @run_async
@@ -607,8 +593,8 @@ def __migrate__(old_chat_id, new_chat_id):
 def __chat_settings__(chat_id, user_id):
     welcome_pref, _, _ = sql.get_welc_pref(chat_id)
     goodbye_pref, _, _ = sql.get_gdbye_pref(chat_id)
-    return "This chat has it's welcome preference set to `{}`.\n" \
-           "It's goodbye preference is `{}`.".format(welcome_pref, goodbye_pref)
+    return f"This chat has it's welcome preference set to `{welcome_pref}`.\n" \
+           f"It's goodbye preference is `{goodbye_pref}`."
 
 
 __help__ = """

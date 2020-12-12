@@ -238,10 +238,10 @@ def wiki(bot: Bot, update: Update):
     try:
         res = wikipedia.summary(search)
     except DisambiguationError as e:
-        update.message.reply_text("Disambiguated pages found! Adjust your query accordingly.\n<i>{}</i>".format(e),
+        update.message.reply_text(f"Disambiguated pages found! Adjust your query accordingly.\n<i>{e}</i>",
         parse_mode=ParseMode.HTML)
     except PageError as e:
-        update.message.reply_text("<code>{}</code>".format(e), parse_mode=ParseMode.HTML)
+        update.message.reply_text(f"<code>{e}</code>", parse_mode=ParseMode.HTML)
     if res:
         result = f"<b>{search}</b>\n\n"
         result += f"<i>{res}</i>\n"
@@ -268,7 +268,7 @@ def judge(bot: Bot, update: Update):
     else:
         user = msg.from_user.first_name
     res = random.choice(judger)
-    reply = msg.reply_text(f"{user} {res}", parse_mode=ParseMode.HTML)
+    msg.reply_text(f"{user} {res}", parse_mode=ParseMode.HTML)
 
 
 @run_async

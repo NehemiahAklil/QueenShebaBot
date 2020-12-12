@@ -1,7 +1,8 @@
 import html
+import random
 from typing import Optional, List
 
-from telegram import Message, Chat, Update, Bot, User
+from telegram import Message, Chat, Update, Bot, User,ParseMode
 from telegram.error import BadRequest
 from telegram.ext import run_async, CommandHandler, Filters
 from telegram.utils.helpers import mention_html
@@ -14,6 +15,14 @@ from tg_bot.modules.helper_funcs.extraction import extract_user_and_text
 from tg_bot.modules.helper_funcs.string_handling import extract_time
 from tg_bot.modules.log_channel import loggable
 
+betrayal_quotes = [
+"<i>“To betray, you must first belong.” and you belonged in our heart</i>\n\n<b>Kim Philby</b>",
+"<i>“There is no greater blessing than a family hand that lifts you from a fall; but there is not lower a family hand that strikes you when you're down.” you just did this to me :(</i>\n\n<b>Wes Fessler</b>",
+"<i>“There is always a lesson of a lifetime to learn in every betrayal.” I just did never get emotionally attached to members they all leave you in the end :(</i>\n\n<b>Edmond Mbiaka</b>",
+"<i>It was a mistake, you said. But the cruel thing was, it felt like the mistake was mine, for trusting you.</i>\n\n<b>David Levithan</b>",
+"<i>“One should rather die than be betrayed. There is no deceit in death. It delivers precisely what it has. Betrayal, though ... betrayal is the willful slaughter of hope.” but we won't stop hoping for your return :(</i>\n\n<b>Steven Deitz</b>",
+"<i>“You know that you have been stabbed when you feel the deep pain of betrayal.” this just happened right now and it hurts :(</i>\n\n<b>Les Parrott</b>"
+] 
 
 @run_async
 @bot_admin
@@ -282,15 +291,18 @@ def kick(bot: Bot, update: Update, args: List[str]) -> str:
 @can_restrict
 def kickme(bot: Bot, update: Update):
     user_id = update.effective_message.from_user.id
+    message = update.effective_message 
+    chat = update.effective_chat
     if is_user_admin(update.effective_chat, user_id):
-        update.effective_message.reply_text("I wish I could... but you're an admin.")
+        message.reply_text("I wish I could... but you're an admin.")
         return
 
-    res = update.effective_chat.unban_member(user_id)  # unban on current user = kick
+    res = chat.unban_member(user_id)  # unban on current user = kick
     if res:
-        update.effective_message.reply_text("The door's that way ===>")
+        reply = random.choice(betrayal_quotes)
+        message.reply_text(reply,parse_mode=ParseMode.HTML)
     else:
-        update.effective_message.reply_text("Huh? I can't :/")
+        message.reply_text("Huh? I can't :/")
 
 
 @run_async
@@ -345,7 +357,8 @@ def unban(bot: Bot, update: Update, args: List[str]) -> str:
         return ""
 
     chat.unban_member(user_id)
-    message.reply_text("Yep, this user can join!")
+    unbanned_member = mention_html(member.user.id,member.user.first_name)
+    message.reply_text(f"Yep, {unbanned_member} can join now!",parse_mode=ParseMode.HTML)
 
     log = "<b>{}:</b>" \
           "\n#UNBANNED" \

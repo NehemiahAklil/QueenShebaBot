@@ -1,3 +1,5 @@
+import os
+import sys
 from tg_bot import LOAD, NO_LOAD, LOGGER
 
 
@@ -9,7 +11,11 @@ def __list_all_modules():
     all_modules = [basename(f)[:-3] for f in mod_paths if isfile(f)
                    and f.endswith(".py")
                    and not f.endswith('__init__.py')]
-
+    if sys.platform.startswith('win'):
+     os.system('color')
+     os.system('cls')
+    else:
+     os.system('clear')
     if LOAD or NO_LOAD:
         to_load = LOAD
         if to_load:
@@ -21,7 +27,7 @@ def __list_all_modules():
             to_load = all_modules
 
         if NO_LOAD:
-            LOGGER.info("Not loading: {}".format(NO_LOAD))
+            LOGGER.info(f"Not loading: {NO_LOAD}")
             return [item for item in to_load if item not in NO_LOAD]
 
         return to_load
@@ -30,5 +36,6 @@ def __list_all_modules():
 
 
 ALL_MODULES = sorted(__list_all_modules())
-LOGGER.info("Modules to load: %s", str(ALL_MODULES))
+LOGGER.info(f"Fetching all the {len(ALL_MODULES)} plugins.")
 __all__ = ALL_MODULES + ["ALL_MODULES"]
+

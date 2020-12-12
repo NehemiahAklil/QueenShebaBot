@@ -31,8 +31,7 @@ def report_setting(bot: Bot, update: Update, args: List[str]):
                 sql.set_user_setting(chat.id, False)
                 msg.reply_text("Turned off reporting! You wont get any reports.")
         else:
-            msg.reply_text("Your current report preference is: `{}`".format(sql.user_should_report(chat.id)),
-                           parse_mode=ParseMode.MARKDOWN)
+            msg.reply_text(f"Your current report preference is: `{sql.user_should_report(chat.id)}`",parse_mode=ParseMode.MARKDOWN)
 
     else:
         if len(args) >= 1:
@@ -45,12 +44,11 @@ def report_setting(bot: Bot, update: Update, args: List[str]):
                 sql.set_chat_setting(chat.id, False)
                 msg.reply_text("Turned off reporting! No admins will be notified on /report or @admin.")
         else:
-            msg.reply_text("This chat's current setting is: `{}`".format(sql.chat_should_report(chat.id)),
-                           parse_mode=ParseMode.MARKDOWN)
+            msg.reply_text(f"This chat's current setting is: `{sql.chat_should_report(chat.id)}`",parse_mode=ParseMode.MARKDOWN)
 
 
 @run_async
-@user_not_admin
+# @user_not_admin
 @loggable
 def report(bot: Bot, update: Update) -> str:
     message = update.effective_message  # type: Optional[Message]
@@ -62,35 +60,30 @@ def report(bot: Bot, update: Update) -> str:
         chat_name = chat.title or chat.first or chat.username
         admin_list = chat.get_administrators()
         messages = update.effective_message  # type: Optional[Message]
+        reported_tag = mention_html(reported_user.id,reported_user.first_name)
+        reporter_tag = mention_html(user.id, user.first_name)
         if chat.username and chat.type == Chat.SUPERGROUP:
-            reported = "{} reported {} to the admins!".format(mention_html(user.id, user.first_name),
-                                                              mention_html(reported_user.id, reported_user.first_name))
+            reported = f"{reporter_tag} reported {reported_tag} to the admins!"
             
-            msg = "<b>{}:</b>" \
-                  "\n<b>Reported user:</b> {} (<code>{}</code>)" \
-                  "\n<b>Reported by:</b> {} (<code>{}</code>)".format(html.escape(chat.title),
-                                                                      mention_html(
-                                                                          reported_user.id,
-                                                                          reported_user.first_name),
-                                                                      reported_user.id,
-                                                                      mention_html(user.id,
-                                                                                   user.first_name),
-                                                                      user.id)
-            link = "\n<b>Link:</b> " \
-                   "<a href=\"http://telegram.me/{}/{}\">click here</a>".format(chat.username, message.message_id)
+            msg = f"<b>{html.escape(chat.title)}:</b>" \
+                  f"\n<b>Reported user:</b> {reported_tag} (<code>{reported_user.id}</code>)" \
+                  f"\n<b>Reported by:</b> {reporter_tag} (<code>{user.id}</code>)"
+            link = f"\n<b>Link:</b> " \
+                   f"<a href=\"http://telegram.me/{chat.username}/{message.message_id}\">click here</a>"
             
             
             should_forward = False
             keyboard = []
             messages.reply_text(reported, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         else:
-            reported = "{} reported {} to the admins!".format(mention_html(user.id, user.first_name),
-                                                              mention_html(reported_user.id, reported_user.first_name))
-
-            msg = "{} is calling for admins in \"{}\"!".format(mention_html(user.id, user.first_name),
-                                                               html.escape(chat_name))
+            reported = f"{reporter_tag} reported {reported_tag} to the admins!"
+            msg = f"{reporter_tag} is calling for admins in \"{html.escape(chat_name)}\"!"
             link = ""
-            should_forward = True
+            chat_tag_id = str(chat.id)[4:]
+            link = f"\n<b>Link:</b> " \
+                   f'<a href="http://telegram.me/c/{chat_tag_id}/{message.message_id}">click here</a>'
+            
+            should_forward = False if message.reply_to_message.from_user.is_bot else True
             keyboard = []
             messages.reply_text(reported, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
@@ -103,6 +96,7 @@ def report(bot: Bot, update: Update) -> str:
                     bot.send_message(admin.user.id, msg + link, parse_mode=ParseMode.HTML)
 
                     if should_forward:
+                        # bot.forwardMessage(admin.user.id,chat.id,False,message.message_id)
                         message.reply_to_message.forward(admin.user.id)
 
                         if len(message.text.split()) > 1:  # If user is giving a reason, send his message too
@@ -122,13 +116,11 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 def __chat_settings__(chat_id, user_id):
-    return "This chat is setup to send user reports to admins, via /report and @admin: `{}`".format(
-        sql.chat_should_report(chat_id))
+    return f"This chat is setup to send user reports to admins, via /report and @admin: `{sql.chat_should_report(chat_id)}`"
 
 
 def __user_settings__(user_id):
-    return "You receive reports from chats you're admin in: `{}`.\nToggle this with /reports in PM.".format(
-        sql.user_should_report(user_id))
+    return f"You receive reports from chats you're admin in: `{sql.user_should_report(user_id)}`.\nToggle this with /reports in PM."
 
 
 __mod_name__ = "Reporting"

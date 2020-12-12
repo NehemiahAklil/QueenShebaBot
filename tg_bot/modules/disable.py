@@ -81,8 +81,7 @@ if is_module_loaded(FILENAME):
 
             if disable_cmd in set(DISABLE_CMDS + DISABLE_OTHER):
                 sql.disable_command(chat.id, str(disable_cmd).lower())
-                update.effective_message.reply_text("Disabled the use of `{}`".format(disable_cmd),
-                                                    parse_mode=ParseMode.MARKDOWN)
+                update.effective_message.reply_text(f"Disabled the use of `{disable_cmd}`",parse_mode=ParseMode.MARKDOWN)
             else:
                 update.effective_message.reply_text("That command can't be disabled")
 
@@ -100,8 +99,7 @@ if is_module_loaded(FILENAME):
                 enable_cmd = enable_cmd[1:]
 
             if sql.enable_command(chat.id, enable_cmd):
-                update.effective_message.reply_text("Enabled the use of `{}`".format(enable_cmd),
-                                                    parse_mode=ParseMode.MARKDOWN)
+                update.effective_message.reply_text(f"Enabled the use of `{enable_cmd}`",parse_mode=ParseMode.MARKDOWN)
             else:
                 update.effective_message.reply_text("Is that even disabled?")
 
@@ -115,9 +113,8 @@ if is_module_loaded(FILENAME):
         if DISABLE_CMDS + DISABLE_OTHER:
             result = ""
             for cmd in set(DISABLE_CMDS + DISABLE_OTHER):
-                result += " - `{}`\n".format(escape_markdown(cmd))
-            update.effective_message.reply_text("The following commands are toggleable:\n{}".format(result),
-                                                parse_mode=ParseMode.MARKDOWN)
+                result += f" - `{escape_markdown(cmd)}`\n"
+            update.effective_message.reply_text(f"The following commands are toggleable:\n{result}",parse_mode=ParseMode.MARKDOWN)
         else:
             update.effective_message.reply_text("No commands can be disabled.")
 
@@ -130,8 +127,8 @@ if is_module_loaded(FILENAME):
 
         result = ""
         for cmd in disabled:
-            result += " - `{}`\n".format(escape_markdown(cmd))
-        return "The following commands are currently restricted:\n{}".format(result)
+            result += f" - `{escape_markdown(cmd)}`\n"
+        return f"Here is the Current Disabled Commands List:\n{result}"
 
 
     @run_async
@@ -141,7 +138,7 @@ if is_module_loaded(FILENAME):
 
 
     def __stats__():
-        return "{} disabled items, across {} chats.".format(sql.num_disabled(), sql.num_chats())
+        return f"{sql.num_disabled()} disabled items, across {sql.num_chats()} chats."
 
 
     def __migrate__(old_chat_id, new_chat_id):
@@ -158,15 +155,15 @@ if is_module_loaded(FILENAME):
  - /cmds: check the current status of disabled commands
 
 *Admin only:*
- - /enable <cmd name>: enable that command
- - /disable <cmd name>: disable that command
- - /listcmds: list all possible toggleable commands
+ - /enable <command name>: enable that command
+ - /disable <command name>: disable that command
+ - /commandlist: list all possible toggleable commands
     """
 
     DISABLE_HANDLER = CommandHandler("disable", disable, pass_args=True, filters=Filters.group)
     ENABLE_HANDLER = CommandHandler("enable", enable, pass_args=True, filters=Filters.group)
     COMMANDS_HANDLER = CommandHandler(["cmds", "disabled"], commands, filters=Filters.group)
-    TOGGLE_HANDLER = CommandHandler("listcmds", list_cmds, filters=Filters.group)
+    TOGGLE_HANDLER = CommandHandler(["listcmds","commandlist"], list_cmds, filters=Filters.group)
 
     dispatcher.add_handler(DISABLE_HANDLER)
     dispatcher.add_handler(ENABLE_HANDLER)

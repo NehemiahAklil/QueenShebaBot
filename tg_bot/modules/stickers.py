@@ -217,8 +217,7 @@ def makepack_internal(msg, user, png_sticker, emoji, bot, packname, packnum):
             msg.reply_text("Contact me in PM first.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
                 text="Start", url=f"t.me/{bot.username}")]]))
         elif e.message == "Internal Server Error: created sticker set not found (500)":
-                msg.reply_text("Sticker pack successfully created! Get it [here](t.me/addstickers/%s)" % packname,
-                       parse_mode=ParseMode.MARKDOWN)
+                msg.reply_text("Sticker pack successfully created! Get it [here](t.me/addstickers/%s)" % packname,parse_mode=ParseMode.MARKDOWN)
         return
 
     if success:

@@ -96,11 +96,11 @@ def totranslate(bot: Bot, update: Update):
                 detection = trl.detect(text)
                 tekstr = trl.translate(text, dest=source_lang)
                 return message.reply_text(
-                    "Translated from `{}` to `{}`:\n`{}`".format(detection.lang, source_lang, tekstr.text),
+                    f"Translated from `{detection.lang}` to `{source_lang}`:\n`{tekstr.text}`",
                     parse_mode=ParseMode.MARKDOWN)
             else:
                 tekstr = trl.translate(text, dest=dest_lang, src=source_lang)
-                message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(source_lang, dest_lang, tekstr.text),
+                message.reply_text(f"Translated from `{source_lang}` to `{dest_lang}`:\n`{tekstr.text}`",
                                    parse_mode=ParseMode.MARKDOWN)
 
     except IndexError:

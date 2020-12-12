@@ -26,29 +26,27 @@ def send_rules(update, chat_id, from_pm=False):
         chat = bot.get_chat(chat_id)
     except BadRequest as excp:
         if excp.message == "Chat not found" and from_pm:
-            bot.send_message(user.id, "The rules shortcut for this chat hasn't been set properly! Ask admins to "
-                                      "fix this.")
+            bot.send_message(user.id, "The rules shortcut for this chat hasn't been set properly! Ask admins to fix this.")
             return
         else:
             raise
 
     rules = sql.get_rules(chat_id)
-    text = "The rules for *{}* are:\n\n{}".format(escape_markdown(chat.title), rules)
+    text = f"The rules for *{escape_markdown(chat.title)}* are:\n\n{rules}"
 
     if from_pm and rules:
         bot.send_message(user.id, text, parse_mode=ParseMode.MARKDOWN)
     elif from_pm:
         bot.send_message(user.id, "The group admins haven't set any rules for this chat yet. "
-                                  "This probably doesn't mean it's lawless though...!")
+                                  "Which means... BURN IT TO THE GROUND!!! :)")
     elif rules:
+        rules_deeplink = [InlineKeyboardButton(text="Rules",url=f"t.me/{bot.username}?start={chat_id}")]
         update.effective_message.reply_text("Contact me in PM to get this group's rules.",
-                                            reply_markup=InlineKeyboardMarkup(
-                                                [[InlineKeyboardButton(text="Rules",
-                                                                       url="t.me/{}?start={}".format(bot.username,
-                                                                                                     chat_id))]]))
+                                            reply_markup=InlineKeyboardMarkup([rules_deeplink]))
     else:
         update.effective_message.reply_text("The group admins haven't set any rules for this chat yet. "
-                                            "This probably doesn't mean it's lawless though...!")
+                                            "Which means... BURN IT TO THE GROUND!!! :)")
+
 
 
 @run_async
@@ -76,7 +74,7 @@ def clear_rules(bot: Bot, update: Update):
 
 
 def __stats__():
-    return "{} chats have rules set.".format(sql.num_chats())
+    return f"{sql.num_chats()} chats have rules set."
 
 
 def __import_data__(chat_id, data):
@@ -90,7 +88,7 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 def __chat_settings__(chat_id, user_id):
-    return "This chat has had it's rules set: `{}`".format(bool(sql.get_rules(chat_id)))
+    return f"This chat has had it's rules set: `{bool(sql.get_rules(chat_id))}`"
 
 
 __help__ = """

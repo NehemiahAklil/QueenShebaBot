@@ -25,9 +25,10 @@ CURRENT_WARNING_FILTER_STRING = "<b>Current warning filters in this chat:</b>\n"
 
 
 # Not async
-def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = None,is_warn_kick = False) -> str:
+def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = None, is_deletion=False,is_silent=False,warned_msg = None,is_warn_kick = False) -> str:
     if is_user_admin(chat, user.id):
-        message.reply_text("Damn admins, can't even be warned!")
+        if not is_silent:
+            message.reply_text("Damn admins, can't even be warned!")
         return ""
 
     if warner:
@@ -60,10 +61,7 @@ def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = N
                      f"\n<b>Counts:</b> <code>{num_warns}/{limit}</code>"
     else:
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Remove warn", callback_data=f"rm_warn({user.id})")]])
-        if is_warn_kick:
-            reply = f"{warned_tag} has been warned and kicked by {warner_tag}. {num_warns} of {limit} warnings given!"
-        else:
-            reply = f"{warned_tag} has been warned by {warner_tag}. {num_warns} of {limit} warnings given!"
+        reply = f"{warned_tag} has been warned by {warner_tag}. {num_warns} of {limit} warnings given!"
         if reason:
             reply += f"\nReason: <b>{html.escape(reason)}</b>"
 
@@ -75,14 +73,18 @@ def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = N
                      f"\n<b>Counts:</b> <code>{num_warns}/{limit}</code>"
 
     try:
-        if warner:
-            return reply,keyboard
+        if is_silent:
+                message.delete()
+        elif is_deletion and warned_msg:
+            message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML)
+            warned_msg.delete()
         else:
             message.reply_text(reply, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML, quote=False)
+            message.reply_text(reply, reply_markup=keyboard,
+                               parse_mode=ParseMode.HTML, quote=False)
         else:
             raise
     return log_reason
@@ -104,17 +106,18 @@ def button(bot: Bot, update: Update) -> str:
         res = sql.remove_warn(user_id, chat.id)
         if res:
             admin_tag = mention_html(user.id, user.first_name)
+            message.edit_text(f"Warn removed by {admin_tag}.",parse_mode=ParseMode.HTML)
             user_member = chat.get_member(user_id)
             unwarned_tag = mention_html(user_member.user.id, user_member.user.first_name)
-            prev_message = update.effective_message.text_html
-            message.edit_text(f"{prev_message}\n\n {admin_tag} removed a warning for {unwarned_tag}",parse_mode=ParseMode.HTML)
-            # message.edit_text(prev_message,parse_mode=ParseMode.HTML)
             return f"<b>{html.escape(chat.title)}:</b>" \
                    f"\n#UNWARN" \
                    f"\n<b>Admin:</b> {admin_tag}" \
                    f"\n<b>User:</b> {unwarned_tag} (<code>{user_member.user.id}</code>)"
         else:
-            message.edit_text("User already has no warns.")
+            message.edit_text(
+                "User already has no warns.".format(
+                    mention_html(user.id, user.first_name)),
+                parse_mode=ParseMode.HTML)
 
     return ""
 
@@ -132,17 +135,9 @@ def warn_user(bot: Bot, update: Update, args: List[str]) -> str:
 
     if user_id:
         if message.reply_to_message and message.reply_to_message.from_user.id == user_id:
-            reply,keyboard = warn(message.reply_to_message.from_user, chat, reason, message, warner)
+            return warn(message.reply_to_message.from_user, chat, reason, message, warner)
         else:
-            reply,keyboard = warn(chat.get_member(user_id).user, chat, reason, message, warner)
-        try:
-            message.reply_text(reply, reply_markup=keyboard, parse_mode=ParseMode.HTML)
-        except BadRequest as excp:
-            if excp.message == "Reply message not found":
-                # Do not reply
-                message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML, quote=False)
-            else:
-                raise
+            return warn(chat.get_member(user_id).user, chat, reason, message, warner)
     else:
         message.reply_text("No user was designated!")
     return ""
@@ -158,10 +153,9 @@ def silent_warn_user(bot: Bot, update: Update, args: List[str]) -> str:
     user_id, reason = extract_user_and_text(message, args)
     if user_id:
         if message.reply_to_message and message.reply_to_message.from_user.id == user_id:
-            warn(message.reply_to_message.from_user, chat, reason, message, warner)
+            return warn(message.reply_to_message.from_user, chat, reason, message, warner, False,True,message.reply_to_message)
         else:
-            warn(chat.get_member(user_id).user, chat, reason, message, warner)
-        return message.delete()
+            return warn(chat.get_member(user_id).user, chat, reason, message, warner,False,True,message.reply_to_message)
     else:
         message.reply_text("No user was designated!")
     return ""
@@ -179,16 +173,9 @@ def delete_warn_user(bot: Bot, update: Update, args: List[str]) -> str:
 
     if user_id:
         if message.reply_to_message and message.reply_to_message.from_user.id == user_id:
-            reply,keyboard  = warn(message.reply_to_message.from_user, chat, reason,message, warner)
+            return warn(message.reply_to_message.from_user, chat, reason,message, warner, True)
         else:
-            reply,keyboard  = warn(chat.get_member(user_id).user, chat, reason, message, warner)
-        try:
-            message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML)
-            message.reply_to_message.delete()
-        except BadRequest as excp:
-            if excp.message == "Reply message not found":
-                # Do not reply
-                message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML, quote=False)
+            return warn(chat.get_member(user_id).user, chat, reason, message, warner, True)
     else:
         message.reply_text("No user was designated!")
     return ""
@@ -206,19 +193,9 @@ def warn_kick_user(bot: Bot, update: Update, args: List[str]) -> str:
 
     if user_id:
         if message.reply_to_message and message.reply_to_message.from_user.id == user_id:
-            user = message.reply_to_message.from_user
+            return warn(message.reply_to_message.from_user, chat, reason, message, warner,False,False,None,True)
         else:
-            user = chat.get_member(user_id).user
-        reply,keyboard = warn(user, chat, reason, message, warner,True)
-        try:
-            chat.unban_member(user.id)
-            message.reply_text(reply, reply_markup=keyboard, parse_mode=ParseMode.HTML)
-        except BadRequest as excp:
-            if excp.message == "Reply message not found":
-                # Do not reply
-                message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML, quote=False)
-            else:
-                raise
+            return warn(chat.get_member(user_id).user, chat, reason, message, warner)
     else:
         message.reply_text("No user was designated!")
     return ""
@@ -237,10 +214,8 @@ def remove_warn(bot: Bot, update: Update, args: List[str]) -> str:
 
     if user_id:
         sql.remove_warn(user_id, chat.id)
+        message.reply_text("Last warning has been removed!")
         warned = chat.get_member(user_id).user
-        unwarned_tag = mention_html(user_id,warned.first_name) 
-        warner_tag = mention_html(user.id,user.first_name)
-        message.reply_text(f"{warner_tag} removed a warning for {unwarned_tag}",parse_mode=ParseMode.HTML)
         return f"<b>{html.escape(chat.title)}:</b>" \
                f"\n#UNWARN" \
                f"\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}" \
@@ -434,7 +409,7 @@ def set_warn_limit(bot: Bot, update: Update, args: List[str]) -> str:
     else:
         limit, soft_warn = sql.get_warn_setting(chat.id)
 
-        message.reply_text(f"The current warn limit is {limit}")
+        message.reply_text("The current warn limit is {}".format(limit))
     return ""
 
 
@@ -474,8 +449,9 @@ def set_warn_strength(bot: Bot, update: Update, args: List[str]):
 
 
 def __stats__():
-    return f"{sql.num_warns()} overall warns, across {sql.num_warn_chats()} chats.\n" \
-           f"{sql.num_warn_filters()} warn filters, across {sql.num_warn_filter_chats()} chats."
+    return "{} overall warns, across {} chats.\n" \
+           "{} warn filters, across {} chats.".format(sql.num_warns(), sql.num_warn_chats(),
+                                                      sql.num_warn_filters(), sql.num_warn_filter_chats())
 
 
 def __import_data__(chat_id, data):
@@ -491,9 +467,9 @@ def __migrate__(old_chat_id, new_chat_id):
 def __chat_settings__(chat_id, user_id):
     num_warn_filters = sql.num_warn_chat_filters(chat_id)
     limit, soft_warn = sql.get_warn_setting(chat_id)
-    limit_action = "kicked" if soft_warn else "banned"
-    return f"This chat has `{num_warn_filters}` warn filters. It takes `{limit}` warns " \
-           f"before the user gets *{limit_action}*."
+    return "This chat has `{}` warn filters. It takes `{}` warns " \
+           "before the user gets *{}*.".format(
+               num_warn_filters, limit, "kicked" if soft_warn else "banned")
 
 
 __help__ = """

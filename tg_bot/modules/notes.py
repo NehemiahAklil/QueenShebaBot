@@ -146,7 +146,8 @@ def save(bot: Bot, update: Update):
     sql.add_note_to_db(chat_id, note_name, text, data_type, buttons=buttons, file=content)
 
     msg.reply_text(
-        "Yas! Added {note_name}.\nGet it with /get {note_name}, or #{note_name}".format(note_name=note_name))
+        f"Yas! Added {note_name}.\n"\
+        f"Get it with /get {note_name}, or #{note_name}")
 
     if msg.reply_to_message and msg.reply_to_message.from_user.is_bot:
         if text:
@@ -184,7 +185,7 @@ def list_notes(bot: Bot, update: Update):
 
     msg = "*Notes in chat:*\n"
     for note in note_list:
-        note_name = " - `{}`\n".format(escape_markdown(note.name))
+        note_name = f" - `{escape_markdown(note.name)}`\n"
         if len(msg) + len(note_name) > MAX_MESSAGE_LENGTH:
             update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
             msg = ""
@@ -220,7 +221,7 @@ def __import_data__(chat_id, data):
 
 
 def __stats__():
-    return "{} notes, across {} chats.".format(sql.num_notes(), sql.num_chats())
+    return f"{sql.num_notes()} notes, across {sql.num_chats()} chats."
 
 
 def __migrate__(old_chat_id, new_chat_id):
@@ -229,7 +230,7 @@ def __migrate__(old_chat_id, new_chat_id):
 
 def __chat_settings__(chat_id, user_id):
     notes = sql.get_all_chat_notes(chat_id)
-    return "There are `{}` notes in this chat.".format(len(notes))
+    return f"There are `{len(notes)}` notes in this chat."
 
 
 __help__ = """

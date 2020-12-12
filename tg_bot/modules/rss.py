@@ -19,27 +19,23 @@ def show_url(bot, update, args):
 
         if link_processed.bozo == 0:
             feed_title = link_processed.feed.get("title", default="Unknown")
-            feed_description = "<i>{}</i>".format(
-                re.sub('<[^<]+?>', '', link_processed.feed.get("description", default="Unknown")))
+            feed_description = re.sub('<[^<]+?>', '', link_processed.feed.get("description",default="Unknown"))
+            feed_description = f"<i>{feed_description}</i>"
             feed_link = link_processed.feed.get("link", default="Unknown")
 
-            feed_message = "<b>Feed Title:</b> \n{}" \
-                           "\n\n<b>Feed Description:</b> \n{}" \
-                           "\n\n<b>Feed Link:</b> \n{}".format(html.escape(feed_title),
-                                                               feed_description,
-                                                               html.escape(feed_link))
+            feed_message = f"<b>Feed Title:</b> \n{html.escape(feed_title)}" \
+                           f"\n\n<b>Feed Description:</b> \n{feed_description}" \
+                           f"\n\n<b>Feed Link:</b> \n{html.escape(feed_link)}"
 
             if len(link_processed.entries) >= 1:
                 entry_title = link_processed.entries[0].get("title", default="Unknown")
-                entry_description = "<i>{}</i>".format(
-                    re.sub('<[^<]+?>', '', link_processed.entries[0].get("description", default="Unknown")))
+                entry_description = re.sub('<[^<]+?>', '', link_processed.entries[0].get("description", default="Unknown"))
+                entry_description = f"<i>{entry_description}</i>"
                 entry_link = link_processed.entries[0].get("link", default="Unknown")
 
-                entry_message = "\n\n<b>Entry Title:</b> \n{}" \
-                                "\n\n<b>Entry Description:</b> \n{}" \
-                                "\n\n<b>Entry Link:</b> \n{}".format(html.escape(entry_title),
-                                                                     entry_description,
-                                                                     html.escape(entry_link))
+                entry_message = f"\n\n<b>Entry Title:</b> \n{html.escape(entry_title)}" \
+                                f"\n\n<b>Entry Description:</b> \n{entry_description}" \
+                                f"\n\n<b>Entry Link:</b> \n{html.escape(entry_link)}"
                 final_message = feed_message + entry_message
 
                 bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
@@ -163,7 +159,7 @@ def rss_update(bot, job):
         if len(new_entry_links) < 5:
             # this loop sends every new update to each user from each group based on the DB entries
             for link, title in zip(reversed(new_entry_links), reversed(new_entry_titles)):
-                final_message = "<b>{}</b>\n\n{}".format(html.escape(title), html.escape(link))
+                final_message =f"<b>{html.escape(title)}</b>\n\n{html.escape(link)}"
 
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
                     bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
@@ -172,7 +168,7 @@ def rss_update(bot, job):
                                      parse_mode=ParseMode.HTML)
         else:
             for link, title in zip(reversed(new_entry_links[-5:]), reversed(new_entry_titles[-5:])):
-                final_message = "<b>{}</b>\n\n{}".format(html.escape(title), html.escape(link))
+                final_message = f"<b>{html.escape(title)}</b>\n\n{html.escape(link)}"
 
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
                     bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
@@ -181,8 +177,7 @@ def rss_update(bot, job):
                                      parse_mode=ParseMode.HTML)
 
             bot.send_message(chat_id=tg_chat_id, parse_mode=ParseMode.HTML,
-                             text="<b>Warning: </b>{} occurrences have been left out to prevent spam"
-                             .format(len(new_entry_links) - 5))
+                             text=f"<b>Warning: </b>{len(new_entry_links) - 5} occurrences have been left out to prevent spam"
 
 
 def rss_set(bot, job):

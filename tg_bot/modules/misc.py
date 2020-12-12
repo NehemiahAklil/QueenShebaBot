@@ -158,7 +158,7 @@ def slap(bot: Bot, update: Update, args: List[str]):
         curr_user = msg.from_user.first_name.replace("<", "&lt;")
         curr_user = curr_user.replace(">", "&gt;")
     else:
-        curr_user = """<a href="tg://user?id={}">{}</a>""".format(msg.from_user.id, msg.from_user.first_name)
+        curr_user = mention_html(msg.from_user.id, msg.from_user.first_name)
 
     user_id = extract_user(update.effective_message, args)
     if user_id:
@@ -168,12 +168,11 @@ def slap(bot: Bot, update: Update, args: List[str]):
             user2 = slapped_user.first_name.replace("<", "&lt;")
             user2 = user2.replace(">", "&gt;")
         else:
-            user2 = """<a href="tg://user?id={}">{}</a>""".format(slapped_user.id,
-                                                   slapped_user.first_name)
+            user2 = mention_html(slapped_user.id,slapped_user.first_name)
 
     # if no target found, bot targets the sender
     else:
-        user1 = """<a href="tg://user?id={}">{}</a>""".format(bot.id, bot.first_name)
+        user1 = mention_html(bot.id, bot.first_name)
         user2 = curr_user
 
     temp = random.choice(SLAP_TEMPLATES)
@@ -203,25 +202,22 @@ def get_id(bot: Bot, update: Update, args: List[str]):
             user1 = update.effective_message.reply_to_message.from_user
             user2 = update.effective_message.reply_to_message.forward_from
             update.effective_message.reply_text(
-                "The original sender, {}, has an ID of `{}`.\nThe forwarder, {}, has an ID of `{}`.".format(
-                    escape_markdown(user2.first_name),
-                    user2.id,
-                    escape_markdown(user1.first_name),
-                    user1.id),
+                f"The original sender, {escape_markdown(user2.first_name)}, has an ID of `{user2.id}`."\
+                f"\nThe forwarder, {escape_markdown(user1.first_name)}, has an ID of `{user1.id}`.",
                 parse_mode=ParseMode.MARKDOWN)
         else:
             user = bot.get_chat(user_id)
-            update.effective_message.reply_text("{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
+            update.effective_message.reply_text(f"{escape_markdown(user.first_name)}'s id is `{user.id}`.",
                                                 parse_mode=ParseMode.MARKDOWN)
     else:
         chat = update.effective_chat  # type: Optional[Chat]
         if chat.type == "private":
-            update.effective_message.reply_text("Your id is `{}`.".format(chat.id),
-                                                parse_mode=ParseMode.MARKDOWN)
+            update.effective_message.reply_text(f"Your id is `{chat.id}`.",parse_mode=ParseMode.MARKDOWN)
 
         else:
-            update.effective_message.reply_text("This group's id is `{}`.".format(chat.id),
-                                                parse_mode=ParseMode.MARKDOWN)
+            user_id = update.effective_message.from_user.id
+            update.effective_message.reply_text(f"Your Id: `{user_id}`\n"
+            f"Chat type {chat.type}, Chat ID: `{chat.id}`.",parse_mode=ParseMode.MARKDOWN)
 
 
 @run_async
@@ -244,18 +240,17 @@ def info(bot: Bot, update: Update, args: List[str]):
 
     else:
         return
-
-    text = "<b>User info</b>:" \
-           "\nID: <code>{}</code>" \
-           "\nFirst Name: {}".format(user.id, html.escape(user.first_name))
+    text = "<b>════════「User Info」════════</b>" \
+           f"\nID: <code>{user.id}</code>" \
+           f"\nFirst Name: {html.escape(user.first_name)}"
 
     if user.last_name:
-        text += "\nLast Name: {}".format(html.escape(user.last_name))
-
+        text += f"\nLast Name: {html.escape(user.last_name)}"
     if user.username:
-        text += "\nUsername: @{}".format(html.escape(user.username))
+        text += f"\nUsername: @{html.escape(user.username)}"
 
-    text += "\nPermanent user link: {}".format(mention_html(user.id, user.first_name))
+    text += f"\nPermanent user link: {mention_html(user.id, user.first_name)}"
+    text += "\n════════════════════════"
 
     if user.id == OWNER_ID:
         text += "\n\nThis person is my owner."
@@ -295,9 +290,10 @@ def get_time(bot: Bot, update: Update, args: List[str]):
         return
 
     res = requests.get(GMAPS_LOC, params=dict(address=location))
-
+    print(res)
     if res.status_code == 200:
         loc = json.loads(res.text)
+        print(loc)
         if loc.get('status') == 'OK':
             lat = loc['results'][0]['geometry']['location']['lat']
             long = loc['results'][0]['geometry']['location']['lng']
@@ -315,18 +311,19 @@ def get_time(bot: Bot, update: Update, args: List[str]):
                     city = part.get('long_name')
 
             if city and country:
-                location = "{}, {}".format(city, country)
+                location = f"{city}, {country}"
             elif country:
                 location = country
 
             timenow = int(datetime.utcnow().timestamp())
-            res = requests.get(GMAPS_TIME, params=dict(location="{},{}".format(lat, long), timestamp=timenow))
+            res = requests.get(GMAPS_TIME, params=dict(location=f"{lat},{long}", timestamp=timenow))
             if res.status_code == 200:
                 offset = json.loads(res.text)['dstOffset']
                 timestamp = json.loads(res.text)['rawOffset']
                 time_there = datetime.fromtimestamp(timenow + timestamp + offset).strftime("%H:%M:%S on %A %d %B")
-                update.message.reply_text("It's {} in {}".format(time_there, location))
-
+                update.message.reply_text(f"It's {time_there} in {location}")
+    else:
+        update.effective_message.reply_text('Time not found')
 
 @run_async
 @user_admin
@@ -345,15 +342,12 @@ def gdpr(bot: Bot, update: Update):
     update.effective_message.reply_text("Deleting identifiable data...")
     for mod in GDPR:
         mod.__gdpr__(update.effective_user.id)
-
-    update.effective_message.reply_text("Your personal data has been deleted.\n\nNote that this will not unban "
-                                        "you from any chats, as that is telegram data, not bot data. "
-                                        "Flooding, warns, and gbans are also preserved, as of "
-                                        "[this](https://ico.org.uk/for-organisations/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/right-to-erasure/), "
-                                        "which clearly states that the right to erasure does not apply "
-                                        "\"for the performance of a task carried out in the public interest\", as is "
-                                        "the case for the aforementioned pieces of data.",
-                                        parse_mode=ParseMode.MARKDOWN)
+    reply = "Your personal data has been deleted."\
+    "\n\nNote that this will not unban you from any chats, as that is telegram data, "\
+    "not bot data. Flooding, warns, and gbans are also preserved, as of "\
+    "[this](https://ico.org.uk/for-organisations/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/right-to-erasure/), which clearly states that the right to erasure does not apply "\
+    "\"for the performance of a task carried out in the public interest\", as is the case for the aforementioned pieces of data."
+    update.effective_message.reply_text(reply,parse_mode=ParseMode.MARKDOWN)
 
 
 def shell(command):
@@ -367,12 +361,12 @@ def ram(bot: Bot, update: Update):
     processes = output.splitlines()
     mem = 0
     for p in processes[1:]:
-        mem += int(float(shell("ps u -p {} | awk ".format(p)+"'{sum=sum+$6}; END {print sum/1024}'")[0].decode().rstrip().replace("'","")))
+        mem += int(float(shell(f"ps u -p {p} | awk "+"'{sum=sum+$6}; END {print sum/1024}'")[0].decode().rstrip().replace("'","")))
     update.message.reply_text(f"RAM usage = <code>{mem} MiB</code>", parse_mode=ParseMode.HTML)
 
 
-MARKDOWN_HELP = """
-Markdown is a very powerful formatting tool supported by telegram. {} has some enhancements, to make sure that \
+MARKDOWN_HELP = f"""
+Markdown is a very powerful formatting tool supported by telegram. {dispatcher.bot.first_name} has some enhancements, to make sure that \
 saved messages are correctly parsed, and to allow you to create buttons.
 
 - <code>_italic_</code>: wrapping text with '_' will produce italic text
@@ -393,7 +387,7 @@ If you want multiple buttons on the same line, use :same, as such:
 This will create two buttons on a single line, instead of one button per line.
 
 Keep in mind that your message <b>MUST</b> contain some text other than just a button!
-""".format(dispatcher.bot.first_name)
+"""
 
 
 @run_async
@@ -417,7 +411,7 @@ def ping(bot: Bot, update: Update):
     message = msg.reply_text("Pinging...")
     end_time = time.time()
     ping_time = round((end_time - start_time)*1000, 3)
-    message.edit_text("*Pong!!!*\n`{}ms`".format(ping_time), parse_mode=ParseMode.MARKDOWN)
+    message.edit_text(f"*Pong!!!*\n`{ping_time}ms`", parse_mode=ParseMode.MARKDOWN)
 
 
 @run_async
@@ -427,7 +421,8 @@ def sudo_list(bot: Bot, update: Update):
         user_id = int(sudo) # Ensure int
         user = bot.get_chat(user_id)
         first_name = html.escape(user.first_name)
-        reply += """• <a href="tg://user?id={}">{}</a>\n""".format(user_id, first_name)
+        sudo_user = mention_html(user_id,first_name)
+        reply += f"• {sudo_user}\n"
     update.effective_message.reply_text(reply, parse_mode=ParseMode.HTML)
 
 
@@ -438,7 +433,8 @@ def support_list(bot: Bot, update: Update):
         user_id = int(support) # Ensure int
         user = bot.get_chat(user_id)
         first_name = html.escape(user.first_name)
-        reply += """• <a href="tg://user?id={}">{}</a>\n""".format(user_id, first_name)
+        support_user = mention_html(user_id,first_name)
+        reply += f"• {support_user}\n"
     update.effective_message.reply_text(reply, parse_mode=ParseMode.HTML)
 
 
@@ -537,6 +533,7 @@ SUPPORT_LIST_HANDLER = CommandHandler("supportlist", support_list, filters=Custo
 SPEEDTEST_HANDLER = CommandHandler("speed", speed_test, filters=CustomFilters.sudo_filter)
 REMOVE_KB_HANDLER = CommandHandler(["clearkeys", "nokeyboard"], remove_keyboard, filters=Filters.group)
 LEAVE_CHAT_HANDLER = CommandHandler(["leave", "yeet"], leave_chat, filters=Filters.user(OWNER_ID), pass_args=True)
+
 
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(IP_HANDLER)

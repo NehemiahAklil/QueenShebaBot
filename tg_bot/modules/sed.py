@@ -71,9 +71,7 @@ def sed(bot: Bot, update: Update):
             check = re.match(repl, to_fix, flags=re.IGNORECASE)
 
             if check and check.group(0).lower() == to_fix.lower():
-                update.effective_message.reply_to_message.reply_text("Hey everyone, {} is trying to make "
-                                                                     "me say stuff I don't wanna "
-                                                                     "say!".format(update.effective_user.first_name))
+                update.effective_message.reply_to_message.reply_text(f"Hey everyone, {update.effective_user.first_name} is trying to make me say stuff I don't wanna say!")
                 return
 
             if 'i' in flags and 'g' in flags:
@@ -98,16 +96,16 @@ def sed(bot: Bot, update: Update):
             update.effective_message.reply_to_message.reply_text("<b>Did you mean:</b>\n"+text, parse_mode=ParseMode.HTML)
 
 
-__help__ = """
+__help__ = f"""
  - s/<text1>/<text2>(/<flag>): Reply to a message with this to perform a sed operation on that message, replacing all \
 occurrences of 'text1' with 'text2'. Flags are optional, and currently include 'i' for ignore case, 'g' for global, \
 or nothing. Delimiters include `/`, `_`, `|`, and `:`. Text grouping is supported. The resulting message cannot be \
-larger than {}.
+larger than {telegram.MAX_MESSAGE_LENGTH}.
 
 *Reminder:* Sed uses some special characters to make matching easier, such as these: `+*.?\\`
 If you want to use these characters, make sure you escape them!
 eg: \\?.
-""".format(telegram.MAX_MESSAGE_LENGTH)
+"""
 
 __mod_name__ = "Sed/Regex"
 

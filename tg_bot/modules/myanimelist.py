@@ -2,7 +2,7 @@ from typing import List
 from malclient import Client
 from malclient.exceptions import APIException
 
-from telegram import Bot, Update, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Bot, Update, Message, InlineKeyboardMarkup, InlineKeyboardButton,ParseMode
 from telegram.ext import run_async
 from tg_bot import OWNER_ID, MAL_CLIENT_ID, MAL_ACCESS_TOKEN, MAL_REFRESH_TOKEN, dispatcher
 from tg_bot.modules.disable import DisableAbleCommandHandler
@@ -12,7 +12,7 @@ client = Client()
 client.init(access_token=MAL_ACCESS_TOKEN)
 
 
-def refresh_token(msg: Message, error: APIException) -> None:
+def refresh_token(bot:Bot,msg: Message, error: APIException) -> None:
     if str(error.response) == "<Response [401]>":
         client.refresh_bearer_token(
             client_id=MAL_CLIENT_ID,
@@ -21,11 +21,12 @@ def refresh_token(msg: Message, error: APIException) -> None:
         )
         new_access_token = client.bearer_token
         new_refresh_token = client.refresh_token
-        MSG_TEXT = (f"Your MAL access token has expired.\n*New Access Token*: `{new_access_token}`\n"
-            f"*New Refresh Token*: `{new_refresh_token}`")
-        bot.send_message(OWNER_ID, MSG_TEXT, parse_mode="MARKDOWN")
+        MSG_TEXT = f"Your MAL access token has expired.\n"\
+                   f"*New Access Token*: `{new_access_token}`\n"\
+                   f"*New Refresh Token*: `{new_refresh_token}`"
+        bot.send_message(OWNER_ID, MSG_TEXT, parse_mode = ParseMode.MARKDOWN)
     else:
-        msg.reply_text(f"An error occurred:\n`{error}`", parse_mode="MARKDOWN")
+        msg.reply_text(f"An error occurred:\n`{error}`", parse_mode = ParseMode.MARKDOWN)
 
 
 @run_async
@@ -63,24 +64,24 @@ def search_anime(bot: Bot, update: Update, args: List[str]) -> None:
         premier = res.start_season
     premiered = f"{premier.year} {premier.season.capitalize()}"
     image = res.main_picture.large
-    text = f"<b>{res.title} ({res.alternative_titles.ja})</b>\n"
-    text += f"<b>Type</b>: <code>{res.media_type.upper()}</code>\n"
-    text += f"<b>Source</b>: <code>{res.source.replace('_', ' ').capitalize()}</code>\n"
-    text += f"<b>Status</b>: <code>{status}</code>\n"
-    text += f"<b>Genres</b>: <code>{genres}</code>\n"
+    text = f"<b>{res.title} ({res.alternative_titles.ja})</b>\n"\
+           f"<b>Type</b>: <code>{res.media_type.upper()}</code>\n"\
+           f"<b>Source</b>: <code>{res.source.replace('_', ' ').capitalize()}</code>\n"\
+           f"<b>Status</b>: <code>{status}</code>\n"\
+           f"<b>Genres</b>: <code>{genres}</code>\n"
     if episodes:
         text += f"<b>Episodes</b>: <code>{episodes}</code>\n"
-    text += f"<b>Score</b>: <code>{res.mean}</code>\n"
-    text += f"<b>Ranked</b>: <code>#{res.rank}</code>\n"
-    text += f"<b>Studio(s)</b>: <code>{studios}</code>\n"
-    text += f"<b>Premiered</b>: <code>{premiered}</code>\n\n"
-    text += f"<a href='{image}'>\u200c</a>"
-    text += res.synopsis
-    keyb = [
+    text += f"<b>Score</b>: <code>{res.mean}</code>\n"\
+            f"<b>Ranked</b>: <code>#{res.rank}</code>\n"\
+            f"<b>Studio(s)</b>: <code>{studios}</code>\n"\
+            f"<b>Premiered</b>: <code>{premiered}</code>\n\n"\
+            f"<a href='{image}'>\u200c</a>"\
+            f"{res.synopsis}"
+    more_keyboard = [
         [InlineKeyboardButton("More Information", url=f"https://myanimelist.net/anime/{anime_id}")]
     ]
     
-    msg.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyb))
+    msg.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(more_keyboard))
 
 
 @run_async
@@ -105,23 +106,23 @@ def search_manga(bot: Bot, update: Update, args: List[str]) -> None:
     genres = ", ".join(genres_list)
     image = res.main_picture.large
     
-    text = f"<b>{res.title} ({res.alternative_titles.ja})</b>\n"
-    text += f"<b>Type</b>: <code>{res.media_type.capitalize()}</code>\n"
-    text += f"<b>Status</b>: <code>{res.status.replace('_', ' ').capitalize()}</code>\n"
-    text += f"<b>Genres</b>: <code>{genres}</code>\n"
-    text += f"<b>Score</b>: <code>{res.mean}</code>\n"
-    text += f"<b>Ranked</b>: <code>#{res.rank}</code>\n"
+    text = f"<b>{res.title} ({res.alternative_titles.ja})</b>\n"\
+           f"<b>Type</b>: <code>{res.media_type.capitalize()}</code>\n"\
+           f"<b>Status</b>: <code>{res.status.replace('_', ' ').capitalize()}</code>\n"\
+           f"<b>Genres</b>: <code>{genres}</code>\n"\
+           f"<b>Score</b>: <code>{res.mean}</code>\n"\
+           f"<b>Ranked</b>: <code>#{res.rank}</code>\n"
     if res.num_volumes:
         text += f"<b>Volumes</b>: <code>{res.num_volumes}</code>\n"
     if res.num_chapters:
         text += f"<b>Chapters</b>: <code>{res.num_chapters}</code>\n"
-    text += f"<a href='{image}'>\u200c</a>"
-    text += f"\n{res.synopsis}"
-    keyb = [
+    text += f"<a href='{image}'>\u200c</a>"\
+            f"\n{res.synopsis}"
+    more_keyboard = [
         [InlineKeyboardButton("More Information", url=f"https://myanimelist.net/manga/{manga_id}")]
     ]
     
-    msg.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyb))
+    msg.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(more_keyboard))
 
 
 __help__ = """

@@ -82,7 +82,7 @@ def connection_chat(bot: Bot, update: Update):
         chat_name = chat.title
 
     if conn:
-        message = "You are currently connected with {}.\n".format(chat_name)
+        message = f"You are currently connected with {chat_name}.\n"
     else:
         message = "You are currently not connected in any group.\n"
     send_message(msg, message, parse_mode="markdown")
@@ -155,9 +155,7 @@ def connect_chat(bot: Bot, update: Update, args: List[str]):
             conn = connected(bot, update, chat, user.id, need_admin=False)
             if conn:
                 connectedchat = dispatcher.bot.getChat(conn)
-                text = "You are connected to *{}* (`{}`)".format(
-                    connectedchat.title, conn
-                )
+                text = f"You are connected to *{connectedchat.title}* (`{conn}`)"
                 buttons.append(
                     InlineKeyboardButton(
                         text="🔌 Disconnect", callback_data="connect_disconnect"
@@ -173,25 +171,20 @@ def connect_chat(bot: Bot, update: Update, args: List[str]):
                 buttons = [buttons]
                 for x in sorted(gethistory.keys(), reverse=True):
                     htime = time.strftime("%d/%m/%Y", time.localtime(x))
-                    text += "╞═「 *{}* 」\n│   `{}`\n│   `{}`\n".format(
-                        gethistory[x]["chat_name"], gethistory[x]["chat_id"], htime
-                    )
+                    hname = gethistory[x]["chat_name"]
+                    hid = gethistory[x]["chat_id"]
+                    text += f"╞═「 *{hname}* 」\n│   `{hid}`\n│   `{htime}`\n"
                     text += "│\n"
                     buttons.append(
                         [
                             InlineKeyboardButton(
-                                text=gethistory[x]["chat_name"],
-                                callback_data="connect({})".format(
-                                    gethistory[x]["chat_id"]
-                                ),
+                                text=hname,
+                                callback_data=f"connect({hid})",
                             )
                         ]
                     )
-                text += "╘══「 Total {} Chats 」".format(
-                    str(len(gethistory)) + " (max)"
-                    if len(gethistory) == 5
-                    else str(len(gethistory))
-                )
+                total_chats = str(len(gethistory)) + " (max)" if len(gethistory) == 5 else str(len(gethistory))  
+                text += f"╘══「 Total {total_chats} Chats 」"
                 conn_hist = InlineKeyboardMarkup(buttons)
             elif buttons:
                 conn_hist = InlineKeyboardMarkup([buttons])
@@ -215,7 +208,7 @@ def connect_chat(bot: Bot, update: Update, args: List[str]):
                 chat_name = dispatcher.bot.getChat(chat.id).title
                 send_message(
                     msg,
-                    "Successfully connected to *{}*.".format(chat_name),
+                    f"Successfully connected to *{chat_name}*.",
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 try:

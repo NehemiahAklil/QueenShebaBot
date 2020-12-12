@@ -61,8 +61,7 @@ def broadcast(bot: Bot, update: Update):
                 failed += 1
                 LOGGER.warning("Couldn't send broadcast to %s, group name %s", str(chat.chat_id), str(chat.chat_name))
 
-        update.effective_message.reply_text("Broadcast complete. {} groups failed to receive the message, probably "
-                                            "due to being kicked.".format(failed))
+        update.effective_message.reply_text(f"Broadcast complete. {failed} groups failed to receive the message, probably due to being kicked.")
 
 
 @run_async
@@ -91,7 +90,7 @@ def chats(bot: Bot, update: Update):
     all_chats = sql.get_all_chats() or []
     chatfile = 'List of chats.\n'
     for chat in all_chats:
-        chatfile += "{} - ({})\n".format(chat.chat_name, chat.chat_id)
+        chatfile += f"{chat.chat_name} - ({chat.chat_id})\n"
 
     with BytesIO(str.encode(chatfile)) as output:
         output.name = "chatlist.txt"
@@ -115,7 +114,7 @@ def rem_chat(bot: Bot, update: Update):
         except RetryAfter as e:
             sleep(e.retry_after)
     if kicked_chats >= 1:
-        msg.reply_text("Done! {} chats were removed from the database!".format(kicked_chats))
+        msg.reply_text(f"Done! {kicked_chats} chats were removed from the database!")
     else:
         msg.reply_text("No chats had to be removed from the database!")
 
@@ -124,11 +123,11 @@ def __user_info__(user_id):
     if user_id == dispatcher.bot.id:
         return """I've seen them in... Wow. Are they stalking me? They're in all the same places I am... oh. It's me."""
     num_chats = sql.get_user_num_chats(user_id)
-    return """I've seen them in <code>{}</code> chats in total.""".format(num_chats)
+    return f"""I've seen them in <code>{num_chats}</code> chats in total."""
 
 
 def __stats__():
-    return "{} users, across {} chats".format(sql.num_users(), sql.num_chats())
+    return f"{sql.num_users()} users, across {sql.num_chats()} chats"
 
 
 def __gdpr__(user_id):
