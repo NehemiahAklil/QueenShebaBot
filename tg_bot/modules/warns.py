@@ -107,7 +107,7 @@ def button(bot: Bot, update: Update) -> str:
             user_member = chat.get_member(user_id)
             unwarned_tag = mention_html(user_member.user.id, user_member.user.first_name)
             prev_message = update.effective_message.text_html
-            message.edit_text(f"{prev_message}\n\n {admin_tag} removed a warning for {unwarned_tag}",parse_mode=ParseMode.HTML)
+            message.edit_text(f"{prev_message}\n\n ~ Warning removed by {admin_tag}",parse_mode=ParseMode.HTML)
             # message.edit_text(prev_message,parse_mode=ParseMode.HTML)
             return f"<b>{html.escape(chat.title)}:</b>" \
                    f"\n#UNWARN" \
@@ -174,7 +174,6 @@ def delete_warn_user(bot: Bot, update: Update, args: List[str]) -> str:
     message = update.effective_message  # type: Optional[Message]
     chat = update.effective_chat  # type: Optional[Chat]
     warner = update.effective_user  # type: Optional[User]
-    print(update.message)
     user_id, reason = extract_user_and_text(message, args)
 
     if user_id:
@@ -184,7 +183,8 @@ def delete_warn_user(bot: Bot, update: Update, args: List[str]) -> str:
             reply,keyboard  = warn(chat.get_member(user_id).user, chat, reason, message, warner)
         try:
             message.reply_text(reply, reply_markup=keyboard,parse_mode=ParseMode.HTML)
-            message.reply_to_message.delete()
+            if message.reply_to_message:
+                message.reply_to_message.delete()
         except BadRequest as excp:
             if excp.message == "Reply message not found":
                 # Do not reply
