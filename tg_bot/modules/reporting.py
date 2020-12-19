@@ -4,7 +4,7 @@ from typing import Optional, List
 from telegram import Message, Chat, Update, Bot, User, ParseMode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest, Unauthorized
-from telegram.ext import CommandHandler, RegexHandler, run_async, Filters
+from telegram.ext import CommandHandler, RegexHandler, run_async, Filters,CallbackQueryHandler
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER
@@ -14,7 +14,33 @@ from tg_bot.modules.sql import reporting_sql as sql
 
 REPORT_GROUP = 5
 
+@run_async
+@loggable
+def solve_callback(bot: Bot, update: Update) -> str:
 
+    query = update.callback_query  # type: Optional[CallbackQuery]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message # type: Optional[Message]
+    match = re.match(r"solve_report\((.+?)\)", query.data)
+
+    if match:
+        report_id = match.group(1)
+        chat = update.effective_chat  # type: Optional[Chat]
+        admin_tag = mention_html(user.id, user.first_name)
+        user_member = chat.get_member(user_id)
+        unwarned_tag = mention_html(user_member.user.id, user_member.user.first_name)
+        prev_message = update.effective_message.text_html
+        message.edit_text(f"{prev_message}\n\n ~ Report Solved by {admin_tag}",                           parse_mode=ParseMode.HTML)
+        query.answer(text="Report Solved!")
+        # message.edit_text(prev_message,parse_mode=ParseMode.HTML)
+        return f"<b>{html.escape(chat.title)}:</b>" \
+               f"\nREPORT SOLVED " \
+               f"\n<b>Reported ID:</b> {report_id}"\
+               f"\n<b>Admin:</b> {admin_tag}"\
+            #    f"\n<b>User:</b> {unwarned_tag} (<code>{user_member.user.id}</code>)"
+    else:
+        query.answer(text="Sorry,There was an error")
+    return ""
 @run_async
 @user_admin
 def report_setting(bot: Bot, update: Update, args: List[str]):
@@ -37,8 +63,7 @@ def report_setting(bot: Bot, update: Update, args: List[str]):
         if len(args) >= 1:
             if args[0] in ("yes", "on"):
                 sql.set_chat_setting(chat.id, True)
-                msg.reply_text("Turned on reporting! Admins who have turned on reports will be notified when /report "
-                               "or @admin are called.")
+                msg.reply_text("Turned on reporting! Admins who have turned on reports will be notified when /report or @admin are called.")
 
             elif args[0] in ("no", "off"):
                 sql.set_chat_setting(chat.id, False)
@@ -64,29 +89,39 @@ def report(bot: Bot, update: Update) -> str:
         reporter_tag = mention_html(user.id, user.first_name)
         if chat.username and chat.type == Chat.SUPERGROUP:
             reported = f"{reporter_tag} reported {reported_tag} to the admins!"
-            
+            if message.reply_to_message and message.reply_to_message.message_id:
+                report_id = f"#{message.reply_to_message.message_id}"
+            else:
+                report_id = f"#{message.message_id}"
             msg = f"<b>{html.escape(chat.title)}:</b>" \
+                  f"\n<b>Report ID:</b> {report_id}"\
                   f"\n<b>Reported user:</b> {reported_tag} (<code>{reported_user.id}</code>)" \
                   f"\n<b>Reported by:</b> {reporter_tag} (<code>{user.id}</code>)"
-            link = f"\n<b>Link:</b> " \
-                   f"<a href=\"http://telegram.me/{chat.username}/{message.message_id}\">click here</a>"
-            
-            
+            link = f"http://telegram.me/c/{chat_tag_id}/{message.message_id}"
             should_forward = False
-            keyboard = []
-            messages.reply_text(reported, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+            buttons = [InlineKeyboardButton(text="Go To Report", url=link),InlineKeyboardButton(text="Solve",callback_data=f"solve_report({report_id})")]
+            report_markup =InlineKeyboardMarkup([buttons])
+            messages.reply_text(reported, reply_markup=report_markup, parse_mode=ParseMode.HTML)
         else:
-            reported = f"{reporter_tag} reported {reported_tag} to the admins!"
-            msg = f"{reporter_tag} is calling for admins in \"{html.escape(chat_name)}\"!"
-            link = ""
-            chat_tag_id = str(chat.id)[4:]
-            link = f"\n<b>Link:</b> " \
-                   f'<a href="http://telegram.me/c/{chat_tag_id}/{message.message_id}">click here</a>'
+            if message.reply_to_message and message.reply_to_message.message_id:
+                report_id = f"#C{message.reply_to_message.message_id}"
+            else:
+                report_id = f"#C{message.message_id}"
             
+            reported = f"{reporter_tag} reported {reported_tag} to the admins!"
+            msg = f"<b>{html.escape(chat.title)}:</b>" \
+                  f"\n<b>Report ID:</b> {report_id}"\
+                  f"\n<b>Reported user:</b> {reported_tag} (<code>{reported_user.id}</code>)" \
+                  f"\n<b>Reported by:</b> {reporter_tag} (<code>{user.id}</code>)"
+            link = f"http://telegram.me/c/{chat_tag_id}/{message.message_id}"
+            chat_tag_id = str(chat.id)[4:]
+            link = f"http://telegram.me/c/{chat_tag_id}/{message.message_id}"
             should_forward = False if message.reply_to_message.from_user.is_bot else True
-            keyboard = []
-            messages.reply_text(reported, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+            buttons = [InlineKeyboardButton(text="Go To Report", url=link),InlineKeyboardButton(text="Solve",callback_data=f"solve_report({report_id})")]
+            report_markup = InlineKeyboardMarkup([buttons])
+            messages.reply_text(reported, reply_markup = report_markup, parse_mode=ParseMode.HTML)
 
+        reported_admin_count = 0
         for admin in admin_list:
             if admin.user.is_bot:  # can't message bots
                 continue
@@ -94,7 +129,7 @@ def report(bot: Bot, update: Update) -> str:
             if sql.user_should_report(admin.user.id):
                 try:
                     bot.send_message(admin.user.id, msg + link, parse_mode=ParseMode.HTML)
-
+                    reported_admin_count += 1
                     if should_forward:
                         # bot.forwardMessage(admin.user.id,chat.id,False,message.message_id)
                         message.reply_to_message.forward(admin.user.id)
@@ -106,6 +141,8 @@ def report(bot: Bot, update: Update) -> str:
                     pass
                 except BadRequest as excp:  # TODO: cleanup exceptions
                     LOGGER.exception("Exception while reporting user")
+        admin_reported = f"Reported {report_id} to {reported_admin_count} Admins"
+        messages.reply_text(reported,quote=False)
         return msg
 
     return ""
@@ -139,6 +176,7 @@ NOTE: Neither of these will get triggered if used by admins.
 REPORT_HANDLER = CommandHandler("report", report, filters=Filters.group)
 SETTING_HANDLER = CommandHandler("reports", report_setting, pass_args=True)
 ADMIN_REPORT_HANDLER = RegexHandler("(?i)@admin(s)?", report)
+CALLBACK_QUERY_HANDLER = CallbackQueryHandler(solve_callback, pattern=r"solve_report")
 
 dispatcher.add_handler(REPORT_HANDLER, REPORT_GROUP)
 dispatcher.add_handler(ADMIN_REPORT_HANDLER, REPORT_GROUP)

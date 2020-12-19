@@ -69,8 +69,11 @@ def del_message(bot: Bot, update: Update) -> str:
         user = update.effective_user  # type: Optional[User]
         chat = update.effective_chat  # type: Optional[Chat]
         if can_delete(chat, bot.id):
-            update.effective_message.reply_to_message.delete()
-            update.effective_message.delete()
+            try:
+                update.effective_message.reply_to_message.delete()
+                update.effective_message.delete()
+            except BadRequest:
+                update.effective_message.reply_text('I can only Delete Messages sent after 48 hours from now')
             return f"<b>{html.escape(chat.title)}:</b>" \
                    f"\n#DEL" \
                    f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \

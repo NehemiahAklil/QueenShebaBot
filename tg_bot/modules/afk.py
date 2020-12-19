@@ -90,11 +90,13 @@ When marked as AFK, any mentions will be replied to with a message to say you're
 __mod_name__ = "AFK"
 
 AFK_HANDLER = DisableAbleCommandHandler("afk", afk)
-AFK_REGEX_HANDLER = DisableAbleRegexHandler("(?i)brb", afk, friendly="afk")
+AFK_REGEX_HANDLER_TWO = DisableAbleRegexHandler("(?i)brb", afk, friendly="afk")
+AFK_REGEX_HANDLER_ONE = DisableAbleRegexHandler("(?i)gtg", afk, friendly="afk")
 NO_AFK_HANDLER = MessageHandler(Filters.all & Filters.group, no_longer_afk)
 AFK_REPLY_HANDLER = MessageHandler(Filters.entity(MessageEntity.MENTION) | Filters.entity(MessageEntity.TEXT_MENTION),reply_afk)
 
 dispatcher.add_handler(AFK_HANDLER, AFK_GROUP)
-dispatcher.add_handler(AFK_REGEX_HANDLER, AFK_GROUP)
+dispatcher.add_handler(AFK_REGEX_HANDLER_ONE, AFK_GROUP)
+dispatcher.add_handler(AFK_REGEX_HANDLER_TWO, AFK_GROUP)
 dispatcher.add_handler(NO_AFK_HANDLER, AFK_GROUP)
 dispatcher.add_handler(AFK_REPLY_HANDLER, AFK_REPLY_GROUP)
