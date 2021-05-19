@@ -22,11 +22,13 @@ class Welcome(BASE):
     leave_type = Column(Integer, default=Types.TEXT.value)
 
     clean_welcome = Column(BigInteger)
+    should_clean_leave = Column(Boolean, default=False)
 
-    def __init__(self, chat_id, should_welcome=True, should_goodbye=True):
+    def __init__(self, chat_id, should_welcome=True, should_goodbye=True,should_clean_leave=False):
         self.chat_id = chat_id
         self.should_welcome = should_welcome
         self.should_goodbye = should_goodbye
+        self.should_clean_leave = should_clean_leave
 
     def __repr__(self):
         return "<Chat {} should Welcome new users: {}>".format(self.chat_id, self.should_welcome)
@@ -177,14 +179,34 @@ def set_clean_welcome(chat_id, clean_welcome):
 
         SESSION.add(curr)
         SESSION.commit()
+        
+def set_clean_leave(chat_id, clean_leave):
+    with INSERTION_LOCK:
+        curr = SESSION.query(Welcome).get(str(chat_id))
+        if not curr:
+            curr = Welcome(str(chat_id))
+
+        curr.should_clean_leave = bool(clean_leave)
+
+        SESSION.add(curr)
+        SESSION.commit()
 
 
-def get_clean_pref(chat_id):
+def get_welcome_clean_pref(chat_id):
     welc = SESSION.query(Welcome).get(str(chat_id))
     SESSION.close()
 
     if welc:
         return welc.clean_welcome
+
+    return False
+    
+def get_leave_clean_pref(chat_id):
+    welc = SESSION.query(Welcome).get(str(chat_id))
+    SESSION.close()
+
+    if welc:
+        return welc.should_clean_leave
 
     return False
 

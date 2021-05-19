@@ -6,7 +6,6 @@ import urllib.parse
 import wikipedia
 from wikipedia.exceptions import DisambiguationError, PageError
 
-
 from telegram import Message, Chat, Update, Bot, ParseMode
 from telegram.ext import run_async
 
@@ -40,23 +39,23 @@ SHRUGS = (
 )
 
 HUGS = (
-"⊂(・﹏・⊂)",
-"⊂(・ヮ・⊂)",
-"⊂(・▽・⊂)",
-"(っಠ‿ಠ)っ",
-"ʕっ•ᴥ•ʔっ",
-"（っ・∀・）っ",
-"(っ⇀⑃↼)っ",
-"(つ´∀｀)つ",
-"(.づσ▿σ)づ.",
-"⊂(´・ω・｀⊂)",
-"(づ￣ ³￣)づ",
-"(.づ◡﹏◡)づ.",
+    "⊂(・﹏・⊂)",
+    "⊂(・ヮ・⊂)",
+    "⊂(・▽・⊂)",
+    "(っಠ‿ಠ)っ",
+    "ʕっ•ᴥ•ʔっ",
+    "（っ・∀・）っ",
+    "(っ⇀⑃↼)っ",
+    "(つ´∀｀)つ",
+    "(.づσ▿σ)づ.",
+    "⊂(´・ω・｀⊂)",
+    "(づ￣ ³￣)づ",
+    "(.づ◡﹏◡)づ.",
 )
 
 TOSS = (
-"The coin landed on heads.",
-"The coin landed on tails."
+    "The coin landed on heads.",
+    "The coin landed on tails."
 )
 
 REACTS = (
@@ -160,8 +159,10 @@ REACTS = (
     "(｡◕‿◕｡)",
 )
 
-normiefont = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-weebyfont = ['卂','乃','匚','刀','乇','下','厶','卄','工','丁','长','乚','从','𠘨','口','尸','㔿','尺','丂','丅','凵','リ','山','乂','丫','乙']
+normiefont = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+              'v', 'w', 'x', 'y', 'z']
+weebyfont = ['卂', '乃', '匚', '刀', '乇', '下', '厶', '卄', '工', '丁', '长', '乚', '从', '𠘨', '口', '尸', '㔿', '尺', '丂', '丅', '凵',
+             'リ', '山', '乂', '丫', '乙']
 
 
 @run_async
@@ -176,19 +177,19 @@ def hug(bot: Bot, update: Update):
     # reply to correct message 
     reply_text = update.effective_message.reply_to_message.reply_text if update.effective_message.reply_to_message else update.effective_message.reply_text
     reply_text = reply_text(random.choice(HUGS))
-    
-    
+
+
 @run_async
 def toss(bot: Bot, update: Update):
- 	update.effective_message.reply_text(random.choice(TOSS))
+    update.effective_message.reply_text(random.choice(TOSS))
 
 
 @run_async
 def react(bot: Bot, update: Update):
-	 # reply to correct message 
+    # reply to correct message
     reply_text = update.effective_message.reply_to_message.reply_text if update.effective_message.reply_to_message else update.effective_message.reply_text
     reply_text = reply_text(random.choice(REACTS))
-    
+
 
 @run_async
 def shout(bot: Bot, update: Update, args):
@@ -217,14 +218,15 @@ def pat(bot: Bot, update: Update):
     msg_id = update.effective_message.reply_to_message.message_id if update.effective_message.reply_to_message else update.effective_message.message_id
     pats = []
     pats = json.loads(urllib.request.urlopen(urllib.request.Request(
-    'http://headp.at/js/pats.json',
-    headers={'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) '
-         'Gecko/20071127 Firefox/2.0.0.11'}
+        'http://headp.at/js/pats.json',
+        headers={'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) '
+                               'Gecko/20071127 Firefox/2.0.0.11'}
     )).read().decode('utf-8'))
     if "@" in msg and len(msg) > 5:
         bot.send_photo(chat_id, f'https://headp.at/pats/{urllib.parse.quote(random.choice(pats))}', caption=msg)
     else:
-        bot.send_photo(chat_id, f'https://headp.at/pats/{urllib.parse.quote(random.choice(pats))}', reply_to_message_id=msg_id)
+        bot.send_photo(chat_id, f'https://headp.at/pats/{urllib.parse.quote(random.choice(pats))}',
+                       reply_to_message_id=msg_id)
 
 
 @run_async
@@ -239,7 +241,7 @@ def wiki(bot: Bot, update: Update):
         res = wikipedia.summary(search)
     except DisambiguationError as e:
         update.message.reply_text(f"Disambiguated pages found! Adjust your query accordingly.\n<i>{e}</i>",
-        parse_mode=ParseMode.HTML)
+                                  parse_mode=ParseMode.HTML)
     except PageError as e:
         update.message.reply_text(f"<code>{e}</code>", parse_mode=ParseMode.HTML)
     if res:
@@ -251,8 +253,8 @@ def wiki(bot: Bot, update: Update):
                 f.write(f"{result}\n\nUwU OwO OmO UmU")
             with open("result.txt", 'rb') as f:
                 bot.send_document(document=f, filename=f.name,
-                    reply_to_message_id=update.message.message_id, chat_id=update.effective_chat.id,
-                    parse_mode=ParseMode.HTML)
+                                  reply_to_message_id=update.message.message_id, chat_id=update.effective_chat.id,
+                                  parse_mode=ParseMode.HTML)
         else:
             update.message.reply_text(result, parse_mode=ParseMode.HTML)
 
@@ -281,7 +283,7 @@ def weebify(bot: Bot, update: Update, args):
     else:
         msg.reply_text("Enter some text to weebify or reply to someone's message!")
         return
-        
+
     for normiecharacter in string:
         if normiecharacter in normiefont:
             weebycharacter = weebyfont[normiefont.index(normiecharacter)]
@@ -291,7 +293,6 @@ def weebify(bot: Bot, update: Update, args):
         msg.reply_to_message.reply_text(string)
     else:
         msg.reply_text(string)
-
 
 
 __help__ = """
@@ -307,7 +308,6 @@ __help__ = """
 """
 
 __mod_name__ = "Extras"
-
 
 SHRUG_HANDLER = DisableAbleCommandHandler(["shrug", "shg"], shrug)
 HUG_HANDLER = DisableAbleCommandHandler("hug", hug)

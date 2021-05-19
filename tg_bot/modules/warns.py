@@ -11,8 +11,7 @@ from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, BAN_STICKER
 from tg_bot.modules.disable import DisableAbleCommandHandler
-from tg_bot.modules.helper_funcs.chat_status import is_user_admin, bot_admin, user_admin_no_reply, user_admin, \
-    can_restrict
+from tg_bot.modules.helper_funcs.chat_status import is_user_admin, bot_admin, user_admin_no_reply, user_admin, can_restrict
 from tg_bot.modules.helper_funcs.extraction import extract_text, extract_user_and_text, extract_user
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.helper_funcs.misc import split_message
@@ -59,7 +58,13 @@ def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = N
                      f"\n<b>Reason:</b> {reason}"\
                      f"\n<b>Counts:</b> <code>{num_warns}/{limit}</code>"
     else:
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Remove warn", callback_data=f"rm_warn({user.id})")]])
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("Remove warn", callback_data=f"rm_warn({user.id})")
+                    ]
+            ]
+        )
         if is_warn_kick:
             reply = f"{warned_tag} has been warned and kicked by {warner_tag}. {num_warns} of {limit} warnings given!"
         else:

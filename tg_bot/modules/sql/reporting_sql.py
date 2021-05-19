@@ -18,6 +18,19 @@ class ReportingUserSettings(BASE):
         return "<User report settings ({})>".format(self.user_id)
 
 
+# class ReportedMessage(BASE):
+#     __tablename__ = "reported_messages"
+#     report_id = Column(String(14), primary_key=True)
+#     chat_id = Column(String(14), primary_key=True)
+#     is_solved = Column(Boolean, default=False)
+#     admins = Column(Array,)
+#     def __init__(self, user_id):
+#         self.user_id = user_id
+#
+#     def __repr__(self):
+#         return "<User report settings ({})>".format(self.user_id)
+
+
 class ReportingChatSettings(BASE):
     __tablename__ = "chat_report_settings"
     chat_id = Column(String(14), primary_key=True)
@@ -30,7 +43,7 @@ class ReportingChatSettings(BASE):
         return "<Chat report settings ({})>".format(self.chat_id)
 
 
-ReportingUserSettings.__table__.create(checkfirst=True)
+# ReportedMessage.__table__.create(checkfirst=True)
 ReportingChatSettings.__table__.create(checkfirst=True)
 
 CHAT_LOCK = threading.RLock()

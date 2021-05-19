@@ -22,6 +22,13 @@ def extract_user(message: Message, args: List[str]) -> Optional[int]:
     return extract_user_and_text(message, args)[0]
 
 
+def extract_args(args: List[str]) -> (Optional[int], Optional[str]):
+    if args:
+        return f"{' '.join(args)} \n"
+    else:
+        return ""
+
+
 def extract_user_and_text(message: Message, args: List[str]) -> (Optional[int], Optional[str]):
     prev_message = message.reply_to_message
     split_text = message.text.split(None, 1)
@@ -75,9 +82,8 @@ def extract_user_and_text(message: Message, args: List[str]) -> (Optional[int], 
         message.bot.get_chat(user_id)
     except BadRequest as excp:
         if excp.message in ("User_id_invalid", "Chat not found"):
-            message.reply_text("I don't seem to have interacted with this user before - please forward a message from "
-                               "them to give me control! (like a voodoo doll, I need a piece of them to be able "
-                               "to execute certain commands...)")
+            message.reply_text(
+                "I don't seem to have interacted with this user before - please forward a message from them to give me control! (like a voodoo doll, I need a piece of them to be able to execute certain commands...)")
         else:
             LOGGER.exception("Exception %s on user %s", excp.message, user_id)
 

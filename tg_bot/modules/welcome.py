@@ -182,17 +182,16 @@ def new_member(bot: Bot, update: Update, job_queue: JobQueue):
                         job_queue.run_once(
                             partial(
                                 check_welcomemute_list, chat.id, new_mem, wm_msg.message_id, sent.message_id
-                            ), 120, name="welcome-mute"
+                            ), 180, name="welcome-mute"
                         )
                     except BadRequest:
                         wm_msg.edit_text(
-                            "I don't have the necessary permissions! Turn off welcome-muting "
-                            "or give me permissions to restrict members."
+                            "I don't have the necessary permissions! Turn off welcome-muting or give me permissions to restrict members."
                         )
 
         
             #delete_join
-        prev_welc = sql.get_clean_pref(chat.id)
+        prev_welc = sql.get_welcome_clean_pref(chat.id)
         if prev_welc:
             try:
                 bot.delete_message(chat.id, prev_welc)
@@ -245,7 +244,6 @@ def left_member(bot: Bot, update: Update):
                                           count=count, chatname=escape(chat.title), id=left_mem.id)
                 buttons = sql.get_gdbye_buttons(chat.id)
                 keyb = build_keyboard(buttons)
-
             else:
                 res = sql.DEFAULT_GOODBYE
                 keyb = []
@@ -253,7 +251,14 @@ def left_member(bot: Bot, update: Update):
             keyboard = InlineKeyboardMarkup(keyb)
 
             send(update, res, keyboard, sql.DEFAULT_GOODBYE)
-
+    # delete group left message
+    should_del_leave = sql.get_leave_clean_pref(chat.id)
+    if should_del_leave:
+        try:
+            # bot.delete_message(chat.id, prev_welc)
+            update.effective_message.delete()
+        except BadRequest as excp:
+            pass
 
 @run_async
 @user_admin
@@ -448,11 +453,11 @@ def welcomemute(bot: Bot, update: Update, args: List[str]) -> str:
                     f"\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}" \
                     f"\nHas toggled welcome mute to <b>STRONG</b>."
         else:
-            msg.reply_text("Please enter `off`/`no`/`soft`/`strong`!", parse_mode=ParseMode.MARKDOWN)
+            msg.reply_text("Please enter `off`/`no`/`soft`/`strong`/`aggressive`!", parse_mode=ParseMode.MARKDOWN)
             return ""
     else:
         curr_setting = sql.welcome_mutes(chat.id)
-        reply = f"\n Give me a setting! Choose one out of: `off`/`no` or `soft` or `strong` only!"\
+        reply = f"\n Give me a setting! Choose one out of: `off`/`no` or `soft` or `strong` or `aggressive` only!"\
                 f"\nCurrent setting: `{curr_setting}`"
         msg.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
         return ""
@@ -466,7 +471,7 @@ def clean_welcome(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user  # type: Optional[User]
 
     if not args:
-        clean_pref = sql.get_clean_pref(chat.id)
+        clean_pref = sql.get_welcome_clean_pref(chat.id)
         if clean_pref:
             update.effective_message.reply_text("I should be deleting welcome messages up to two days old.")
         else:
@@ -487,6 +492,39 @@ def clean_welcome(bot: Bot, update: Update, args: List[str]) -> str:
                f"\n#CLEAN_WELCOME" \
                f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
                f"\nHas toggled clean welcomes to <code>OFF</code>."
+    else:
+        # idek what you're writing, say yes or no
+        update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
+        return ""
+@run_async
+@user_admin
+@loggable
+def clean_leave(bot: Bot, update: Update, args: List[str]) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+
+    if not args:
+        clean_pref = sql.get_leave_clean_pref(chat.id)
+        if clean_pref:
+            update.effective_message.reply_text("I should be deleting members' leaving messages")
+        else:
+            update.effective_message.reply_text("I'm currently not deleting members' leaving messages!")
+        return ""
+
+    if args[0].lower() in ("on", "yes"):
+        sql.set_clean_leave(str(chat.id), True)
+        update.effective_message.reply_text("I'll start deleting members' leaving messages!")
+        return f"<b>{escape(chat.title)}:</b>" \
+               f"\n#CLEAN_LEAVE" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+               f"\nHas toggled clean leaves to <code>ON</code>."
+    elif args[0].lower() in ("off", "no"):
+        sql.set_clean_leave(str(chat.id), False)
+        update.effective_message.reply_text("I won't delete members' leaving messages.")
+        return f"<b>{escape(chat.title)}:</b>" \
+               f"\n#CLEAN_LEAVE" \
+               f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \
+               f"\nHas toggled clean leaves to <code>OFF</code>."
     else:
         # idek what you're writing, say yes or no
         update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
@@ -523,7 +561,7 @@ def check_welcomemute_list(chat_id, user, message_id, wmsg_id, bot, job):
             bot.unban_chat_member(chat_id, user_id)
             WELCOME_MUTED_USERS.discard(user_id)
             bot.edit_message_text(
-                f"{mention_html(user_id, name)} has been kicked after failing to verify within 2 minutes.",
+                f"{mention_html(user_id, name)} has been kicked after failing to verify within 3 minutes.",
                 chat_id, message_id, parse_mode="HTML"
             )
         except BadRequest:
@@ -536,7 +574,7 @@ def check_welcomemute_list(chat_id, user, message_id, wmsg_id, bot, job):
 
 
 WELC_HELP_TXT = f"""
-Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages to be individually generated, like the default welcome message is, you can use *these* variables:
+Your group's welcome/goodbye messages can be personalized in multiple ways. If you want the messages to be individually generated, like the default welcome message is, you can use *these* variables:
                 " - `{{first}}`: this represents the user's *first* name
                 " - `{{last}}`: this represents the user's *last* name. Defaults to *first name* if user has no last name.\n
                 " - `{{fullname}}`: this represents the user's *full* name. Defaults to *first name* if user has no last name.
@@ -627,6 +665,7 @@ RESET_WELCOME = CommandHandler("resetwelcome", reset_welcome, filters=Filters.gr
 RESET_GOODBYE = CommandHandler("resetgoodbye", reset_goodbye, filters=Filters.group)
 WELCOMEMUTE_HANDLER = CommandHandler("welcomemute", welcomemute, pass_args=True, filters=Filters.group)
 CLEAN_WELCOME = CommandHandler("cleanwelcome", clean_welcome, pass_args=True, filters=Filters.group)
+CLEAN_LEAVE = CommandHandler("cleanleave", clean_leave, pass_args=True, filters=Filters.group)
 WELCOME_HELP = CommandHandler("welcomehelp", welcome_help)
 WELCOME_MUTE_HELP = CommandHandler("wlcmutehelp", welcome_mute_help)
 BUTTON_VERIFY_HANDLER = CallbackQueryHandler(user_button, pattern=r"user_join_")
@@ -640,6 +679,7 @@ dispatcher.add_handler(SET_GOODBYE)
 dispatcher.add_handler(RESET_WELCOME)
 dispatcher.add_handler(RESET_GOODBYE)
 dispatcher.add_handler(CLEAN_WELCOME)
+dispatcher.add_handler(CLEAN_LEAVE)
 dispatcher.add_handler(WELCOME_HELP)
 dispatcher.add_handler(WELCOMEMUTE_HANDLER)
 dispatcher.add_handler(BUTTON_VERIFY_HANDLER)

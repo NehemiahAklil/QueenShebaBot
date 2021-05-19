@@ -27,9 +27,9 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
     message = update.effective_message  # type: Optional[Message]
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
-    
+
     promoter = chat.get_member(user.id)
-    
+
     if not (promoter.can_promote_members or promoter.status == "creator") and not user.id in SUDO_USERS:
         message.reply_text("You don't have the necessary rights to do that!")
         return ""
@@ -76,12 +76,12 @@ def set_title(bot: Bot, update: Update, args):
     chat = update.effective_chat
     user = update.effective_user
     message = update.effective_message
-    
+
     promoter = chat.get_member(user.id)
     if not (promoter.can_promote_members or promoter.status == "creator") and not user.id in SUDO_USERS:
         message.reply_text("You don't have the necessary rights to do that!")
         return
-    
+
     user_id, title = extract_user_and_text(message, args)
     if not user_id:
         message.reply_text("You don't seem to be referring to a user.")
@@ -95,7 +95,7 @@ def set_title(bot: Bot, update: Update, args):
         f"&user_id={user_id}"
         f"&custom_title={title}"
     )
-    
+
     if response.status_code != 200:
         resp_text = json.loads(response.text)
         text = f"An error occurred:\n`{resp_text.get('description')}`"
@@ -149,7 +149,8 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
                f"\n<b>User:</b> {mention_html(user_member.user.id, user_member.user.first_name)}"
 
     except BadRequest:
-        message.reply_text("I couldn't demote. Either I am not an admin, or the user's admin status was appointed by another admin, so I can't act upon them!")
+        message.reply_text(
+            "I couldn't demote. Either I am not an admin, or the user's admin status was appointed by another admin, so I can't act upon them!")
         return ""
 
 
@@ -232,12 +233,26 @@ def adminlist(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
     administrators = chat.get_administrators()
     chat_title = chat.title or "this chat"
-    text = f"Admins in <b>{chat_title}</b>:"
+    text = f"Group Administration of <b>{chat_title}</b>:"
+    creator_text, admin_text, promoted_text, elevated_text = "", "", "", ""
     for admin in administrators:
         user = admin.user
-        name = mention_html(user.id,user.first_name + (user.last_name or ""))
-        text += f"\n • {name}"
-
+        name = mention_html(user.id, f"{user.first_name} {(user.last_name or '')}")
+        member = chat.get_member(int(user.id))
+        if member.status == 'creator':
+            creator_text += f"\n  🔱 {name}"
+        elif user.id == bot.id:
+            continue
+        else:
+            admin_text += f"\n  ⚜ {name}"
+    if creator_text:
+        text += "\n\n👑 <b>CREATOR</b>" + creator_text
+        # text += "\n\n👑 <b>Creator</b>" + creator_text
+    if admin_text:
+        text += "\n\n⚜ <b>ADMINISTRATORS</b>" + admin_text
+        # text += "\n\n⚜ <b>Administrators</b>" + admin_text
+    if promoted_text:
+        text += "👮‍ Elevated Moderators 👮" + elevated_text
     update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
@@ -252,7 +267,7 @@ __help__ = """
 *Admin only:*
  - /pin: silently pins the message replied to - add 'loud' or 'notify' to give notifs to users.
  - /unpin: unpins the currently pinned message.
- - /link: gets invitelink of the chat.
+ - /link: gets invite link of the chat.
  - /promote: promotes the user you reply to.
  - /settitle <title>: as a reply to a user, sets admin title.
  - /demote: demotes the user you reply to.
@@ -270,7 +285,7 @@ PROMOTE_HANDLER = CommandHandler("promote", promote, pass_args=True, filters=Fil
 SET_TITLE_HANDLER = CommandHandler("settitle", set_title, pass_args=True, filters=Filters.group)
 DEMOTE_HANDLER = CommandHandler("demote", demote, pass_args=True, filters=Filters.group)
 
-ADMINLIST_HANDLER = DisableAbleCommandHandler("adminlist", adminlist, filters=Filters.group)
+ADMINLIST_HANDLER = DisableAbleCommandHandler(["adminlist", "staff"], adminlist, filters=Filters.group)
 
 dispatcher.add_handler(PIN_HANDLER)
 dispatcher.add_handler(UNPIN_HANDLER)

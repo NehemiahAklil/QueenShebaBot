@@ -4,7 +4,7 @@ from malclient.exceptions import APIException
 
 from telegram import Bot, Update, Message, InlineKeyboardMarkup, InlineKeyboardButton,ParseMode
 from telegram.ext import run_async
-from tg_bot import OWNER_ID, MAL_CLIENT_ID, MAL_ACCESS_TOKEN, MAL_REFRESH_TOKEN, dispatcher
+from tg_bot import OWNER_ID, MAL_CLIENT_ID, MAL_ACCESS_TOKEN, MAL_CLIENT_SECRET,MAL_REFRESH_TOKEN, dispatcher
 from tg_bot.modules.disable import DisableAbleCommandHandler
 
 
@@ -17,7 +17,7 @@ def refresh_token(bot:Bot,msg: Message, error: APIException) -> None:
         client.refresh_bearer_token(
             client_id=MAL_CLIENT_ID,
             refresh_token=MAL_REFRESH_TOKEN,
-            client_secret=None
+            client_secret=MAL_CLIENT_SECRET
         )
         new_access_token = client.bearer_token
         new_refresh_token = client.refresh_token
@@ -39,7 +39,7 @@ def search_anime(bot: Bot, update: Update, args: List[str]) -> None:
     try:
         anime = client.search_anime(query)
     except APIException as e:
-        refresh_token(msg, e)
+        refresh_token(bot,msg, e)
     if not anime:
         msg.reply_text("Not found!")
         return

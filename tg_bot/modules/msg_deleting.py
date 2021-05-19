@@ -44,7 +44,8 @@ def purge(bot: Bot, update: Update, args: List[str]) -> str:
                 msg.delete()
             except BadRequest as err:
                 if err.message == "Message can't be deleted":
-                    bot.send_message(chat.id, "Cannot delete all messages. The messages may be too old, I might not have delete rights, or this might not be a supergroup.")
+                    bot.send_message(chat.id, "Cannot delete all messages. The messages may be too old, I might not "
+                                              "have delete rights, or this might not be a supergroup.")
 
                 elif err.message != "Message to delete not found":
                     LOGGER.exception("Error while purging chat messages.")
@@ -73,7 +74,7 @@ def del_message(bot: Bot, update: Update) -> str:
                 update.effective_message.reply_to_message.delete()
                 update.effective_message.delete()
             except BadRequest:
-                update.effective_message.reply_text('I can only Delete Messages sent after 48 hours from now')
+                update.effective_message.reply_text('I can only Delete Messages sent within 48 hours from now')
             return f"<b>{html.escape(chat.title)}:</b>" \
                    f"\n#DEL" \
                    f"\n<b>Admin:</b> {mention_html(user.id, user.first_name)}" \

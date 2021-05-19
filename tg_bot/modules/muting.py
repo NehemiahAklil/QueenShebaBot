@@ -10,7 +10,7 @@ from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER
-from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_admin,user_admin_no_reply, can_restrict
+from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin,can_delete, is_user_admin,user_admin_no_reply, can_restrict
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.string_handling import extract_time
 from tg_bot.modules.log_channel import loggable
@@ -42,21 +42,69 @@ def mute(bot: Bot, update: Update, args: List[str]) -> str:
 
         elif member.can_send_messages is None or member.can_send_messages:
             bot.restrict_chat_member(chat.id, user_id, can_send_messages=False)
-            # message.reply_text("Muted!")
             muter_tag = mention_html(user.id, user.first_name)
+            muted_tag = mention_html(member.user.id, member.user.first_name)
             keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Unmute ✅", callback_data="unmute({})".format(member.user.id))]])
-            reply = "{} has been muted by {}!".format(mention_html(member.user.id, member.user.first_name), muter_tag)
+            reply = f"{muted_tag} has been muted by {muter_tag}!"
             message.reply_text(reply,reply_markup=keyboard,parse_mode=ParseMode.HTML)
-            return "<b>{}:</b>" \
+            return f"<b>{html.escape(chat.title)}:</b>" \
                    "\n#MUTE" \
-                   "\n<b>Admin:</b> {}" \
-                   "\n<b>User:</b> {}".format(html.escape(chat.title),
-                                              mention_html(user.id, user.first_name),
-                                              mention_html(member.user.id, member.user.first_name))
+                   f"\n<b>Admin:</b> {muter_tag}" \
+                   f"\n<b>User:</b> {muted_tag}"
 
         else:
             message.reply_text("This user is already muted!")
+    else:
+        message.reply_text("This user isn't in the chat!")
+
+    return ""
+
+@run_async
+@bot_admin
+@user_admin
+@loggable
+def silent_mute(bot: Bot, update: Update, args: List[str]) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+
+    user_id = extract_user(message, args)
+    if not user_id:
+        message.reply_text("You'll need to either give me a username to mute, or reply to someone to be muted.")
+        return ""
+
+    if user_id == bot.id:
+        message.reply_text("I'm not muting myself!")
+        return ""
+
+    member = chat.get_member(int(user_id))
+
+    if member:
+        if is_user_admin(chat, user_id, member=member):
+            message.reply_text("Afraid I can't stop an admin from talking!")
+
+        elif member.can_send_messages is None or member.can_send_messages:
+            bot.restrict_chat_member(chat.id, user_id, can_send_messages=False)
+            muter_tag = mention_html(user.id, user.first_name)
+            muted_tag = mention_html(member.user.id, member.user.first_name)
+            return f"<b>{html.escape(chat.title)}:</b>" \
+                   "\n#SILENT_MUTE" \
+                   f"\n<b>Admin:</b> {muter_tag}" \
+                   f"\n<b>User:</b> {muted_tag}"
+
+        else:
+            message.reply_text("This user is already muted!")
+        if can_delete(chat, bot.id):
+            try:
+                update.effective_message.reply_to_message.delete()
+                update.effective_message.delete()
+            except BadRequest as excp:
+                LOGGER.warning(update)
+                LOGGER.exception("Error silently muting user %s in chat %s (%s) due to %s", member.user.id, chat.title,
+                                 chat.id,
+                                 excp.message)
+
     else:
         message.reply_text("This user isn't in the chat!")
 
@@ -241,18 +289,21 @@ def temp_mute(bot: Bot, update: Update, args: List[str]) -> str:
 __help__ = """
 *Admin only:*
  - /mute <userhandle>: silences a user. Can also be used as a reply, muting the replied to user.
+ - /smute <userhandle>: silently mutes a user. Can also be used as a reply, muting the replied to user.
  - /tmute <userhandle> x(m/h/d): mutes a user for x time. (via handle, or reply). m = minutes, h = hours, d = days.
  - /unmute <userhandle>: unmutes a user. Can also be used as a reply, muting the replied to user.
 """
 
 __mod_name__ = "Muting"
 
-MUTE_HANDLER = CommandHandler(["stfu", "mute"], mute, pass_args=True, filters=Filters.group)
+MUTE_HANDLER = CommandHandler(["silence", "mute"], mute, pass_args=True, filters=Filters.group)
+SILENT_MUTE_HANDLER = CommandHandler(["silentmute", "smute"], silent_mute, pass_args=True, filters=Filters.group)
 UNMUTE_HANDLER = CommandHandler("unmute", unmute, pass_args=True, filters=Filters.group)
 CALLBACK_QUERY_HANDLER = CallbackQueryHandler(unmute_button, pattern=r"unmute")
 TEMPMUTE_HANDLER = CommandHandler(["tmute", "tempmute"], temp_mute, pass_args=True, filters=Filters.group)
 
 dispatcher.add_handler(MUTE_HANDLER)
+dispatcher.add_handler(SILENT_MUTE_HANDLER)
 dispatcher.add_handler(UNMUTE_HANDLER)
 dispatcher.add_handler(TEMPMUTE_HANDLER)
 dispatcher.add_handler(CALLBACK_QUERY_HANDLER)

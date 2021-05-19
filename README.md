@@ -6,7 +6,7 @@ Originally a Pɧơɛnıх fork, was created for personal use of [this group](htt
 
 <!-- Feel free to add it to your groups though! -->
 
-Can be found on telegram as [𝐀𝐛𝐲𝐬𝐬𝐢𝐧𝐢𝐚𝐧 𝐌𝐨𝐝𝐞𝐫𝐚𝐭𝐨𝐫](https://t.me/AbyssinianModeratorBot).
+Can be found on telegram as [Canis Simensis](https://t.me/AbyssinianModeratorBot).
 
 If you want to create your own bot, you can basically follow the steps given [here](https://github.com/PaulSonOfLars/tgbot/blob/master/README.md)
 

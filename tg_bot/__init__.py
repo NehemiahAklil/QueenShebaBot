@@ -68,6 +68,7 @@ if ENV:
     MOE_API = os.environ.get('MOE_API', "")
     AI_API_KEY = os.environ.get('AI_API_KEY', "")
     MAL_CLIENT_ID = os.environ.get('MAL_CLIENT_ID', "")
+    MAL_CLIENT_SECRET = os.environ.get('MAL_CLIENT_SECRET', "")
     MAL_ACCESS_TOKEN = os.environ.get('MAL_ACCESS_TOKEN', "")
     MAL_REFRESH_TOKEN = os.environ.get('MAL_REFRESH_TOKEN', "")
     try:
@@ -125,6 +126,7 @@ else:
     MOE_API = Config.MOE_API
     AI_API_KEY = Config.AI_API_KEY
     MAL_CLIENT_ID = Config.MAL_CLIENT_ID
+    MAL_CLIENT_SECRET = Config.MAL_CLIENT_SECRET
     MAL_ACCESS_TOKEN = Config.MAL_ACCESS_TOKEN
     MAL_REFRESH_TOKEN = Config.MAL_REFRESH_TOKEN
     try:
@@ -136,7 +138,7 @@ else:
 SUDO_USERS.add(OWNER_ID)
 DEV_USERS.add(OWNER_ID)
 
-updater = tg.Updater(TOKEN, workers=WORKERS,use_context=True)
+updater = tg.Updater(TOKEN, workers=WORKERS)
 
 dispatcher = updater.dispatcher
 

@@ -28,6 +28,17 @@ def stickerid(bot: Bot, update: Update):
     else:
         update.effective_message.reply_text("Please reply to a sticker to get its ID.")
 
+@run_async
+def gifid(bot: Bot, update: Update):
+    msg = update.effective_message
+    print(msg.reply_to_message)
+    if msg.reply_to_message and msg.reply_to_message.animation:
+        update.effective_message.reply_text("Gif ID:\n```" +
+                                            msg.reply_to_message.animation.file_id + "```",
+                                            parse_mode=ParseMode.MARKDOWN)
+    else:
+        update.effective_message.reply_text("Please reply to a gif to get its ID.")
+
 
 @run_async
 def getsticker(bot: Bot, update: Update):
@@ -229,15 +240,18 @@ def makepack_internal(msg, user, png_sticker, emoji, bot, packname, packnum):
 
 __help__ = """
 - /stickerid: reply to a sticker to get its ID.
+- /gifid: reply to a sticker to get its ID.
 - /getsticker: reply to a sticker to get the raw PNG image.
 - /steal: reply to a sticker or image to add it to your pack.
 """
 
 __mod_name__ = "Stickers"
 STICKERID_HANDLER = DisableAbleCommandHandler("stickerid", stickerid)
+GIFID_HANDLER = DisableAbleCommandHandler("gifid", gifid)
 GETSTICKER_HANDLER = DisableAbleCommandHandler("getsticker", getsticker)
 STEAL_HANDLER = DisableAbleCommandHandler("steal", steal, pass_args=True, admin_ok=False)
 
 dispatcher.add_handler(STICKERID_HANDLER)
+dispatcher.add_handler(GIFID_HANDLER)
 dispatcher.add_handler(GETSTICKER_HANDLER)
 dispatcher.add_handler(STEAL_HANDLER)
